@@ -19,7 +19,7 @@ public class Game {
 
   // Constructor creates an empty board
   public Game() {
-    initialize();
+//    initialize();
 //    check1();
 //    check2();
 //    check3();
@@ -28,6 +28,13 @@ public class Game {
 //    check6();
 //    check7();
 //    check8();
+//    check9();
+//    check10();
+//    check11();
+    check12();
+//    check13();
+
+
   }
 
   public int getTurn() {
@@ -763,8 +770,8 @@ public class Game {
           && !getBoard()[i][targetCol].isWhite
       ){
         AbsColOfBlackRookDownFromTargetPiece = i;
-        if(getBoard()[targetRow][targetCol].isWhite) MovableRowOfBlackRookUp= i-1;
-        else MovableRowOfBlackRookUp = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableRowOfBlackRookUp= i;
+        else MovableRowOfBlackRookUp = i+1;
         break;
       }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
         break;
@@ -1264,6 +1271,63 @@ public class Game {
     board[2][5] = new Rook("♖", 5, true, new Position(2, 5), 3, 2, 5, 2);
     setBoard(board);
   }
+  //白ルークの上に新しくコマが入ってくる場合
+  public void check9 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, true,false, false, null);
+    board[5][2] = new Rook("♜", 5, false, new Position(5, 2), 5, 2, 5, 2);
+    board[2][5] = new Rook("♖", 5, true, new Position(2, 5), 5, 2, 5, 2);
+    setBoard(board);
+  }
+  //白ルークの下に新しくコマが入ってくる場合
+  public void check10 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, true,false, false, null);
+    board[0][2] = new Rook("♜", 5, false, new Position(0, 2), 5, 2, 0, 7);
+    board[2][5] = new Rook("♖", 5, true, new Position(2, 5), 5, 2, 5, 2);
+    setBoard(board);
+  }
+  //白ルークの右に新しくコマが入ってくる場合
+  public void check11 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, true,false, false, null);
+    board[0][7] = new Rook("♜", 5, false, new Position(0, 7), 0, 7, 0, 7);
+    board[2][5] = new Rook("♖", 5, true, new Position(2, 5), 5, 2, 5, 2);
+    setBoard(board);
+  }
+  //黒ルークの下にコマが新しく入ってくる場合の確認
+  public void check12 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, true, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 2, 5);
+    board[3][5] = new Rook("♖", 5, true, new Position(3, 5), 5, 2, 4, 4);
+    setBoard(board);
+  }
+  //黒ルーク上にコマが新しく入ってくる場合の確認
+  public void check13 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, true, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 2, 5);
+    board[0][6] = new Rook("♖", 5, true, new Position(0, 6), 6, 1, 7, 0);
+    setBoard(board);
+  }
+  //黒ルーク左側にコマが新しく入ってくる場合の確認
+  public void check14 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, true, false, false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 2, 5);
+    board[0][3] = new Rook("♖", 5, true, new Position(0, 3), 3, 4, 7, 0);
+    setBoard(board);
+  }
+  //黒ルーク右側にコマが新しく入ってくる場合の確認
+  public void check15 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, true, false, false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 2, 5);
+    board[0][1] = new Rook("♖", 5, true, new Position(0, 1), 1, 6, 7, 0);
+    setBoard(board);
+  }
+
 
   public int convertColFromAlphabetToNum (String colAlphabet){
     int colNumber = -1;
