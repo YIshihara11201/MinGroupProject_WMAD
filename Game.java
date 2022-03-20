@@ -20,6 +20,14 @@ public class Game {
   // Constructor creates an empty board
   public Game() {
     initialize();
+//    check1();
+//    check2();
+//    check3();
+//    check4();
+//    check5();
+//    check6();
+//    check7();
+//    check8();
   }
 
   public int getTurn() {
@@ -1163,16 +1171,14 @@ public class Game {
     board[1][2] = new Pawn("♙", 1, true, new Position(1, 2), true, false, false, false,false, false, null);
     board[1][3] = new Pawn("♙", 1, true, new Position(1, 3), true, false, false, false,false, false, null);
     board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
-//    board[1][5] = new Pawn("♙", 1, true, new Position(1, 5), true, false, false, false,false, false, null);
-    board[1][5] = new Pawn("♟", 1, false, new Position(1, 5), false, false, false, false,false, false, null);
+    board[1][5] = new Pawn("♙", 1, true, new Position(1, 5), true, false, false, false,false, false, null);
     board[1][6] = new Pawn("♙", 1, true, new Position(1, 6), true, false, false, false,false, false, null);
     board[1][7] = new Pawn("♙", 1, true, new Position(1, 7), true, false, false, false,false, false, null);
 
     board[6][0] = new Pawn("♟", 1, false, new Position(6, 0), true, false, false, false,false, false, null);
     board[6][1] = new Pawn("♟", 1, false, new Position(6, 1), true, false, false, false,false, false, null);
     board[6][2] = new Pawn("♟", 1, false, new Position(6, 2), true, false, false, false,false, false, null);
-//    board[6][3] = new Pawn("♟", 1, false, new Position(6, 3), true, false, false, false,false, false, null);
-    board[6][3] = new Pawn("♙", 1, true, new Position(6, 3), false, false, false, false,false, false, null);
+    board[6][3] = new Pawn("♟", 1, false, new Position(6, 3), true, false, false, false,false, false, null);
     board[6][4] = new Pawn("♟", 1, false, new Position(6, 4), true, false, false, false,false, false, null);
     board[6][5] = new Pawn("♟", 1, false, new Position(6, 5), true, false, false, false,false, false, null);
     board[6][6] = new Pawn("♟", 1, false, new Position(6, 6), true, false, false, false,false, false, null);
@@ -1186,6 +1192,76 @@ public class Game {
 //    board[7][6] = new Knight("♞", 2, false, new Position(7, 6));
     board[7][7] = new Rook("♜", 5, false, new Position(7, 7), 0, 6, 0, 0);
 
+    setBoard(board);
+  }
+
+  // check functions (test)
+  //白ルーク上からコマが外れる場合の確認
+  public void check1 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[0][0] = new Rook("♖", 5, true, new Position(0, 0), 0, 6, 0, 0);
+    board[1][0] = new Rook("♜", 5, false, new Position(1, 0), 7, 0, 0, 6);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+
+    setBoard(board);
+  }
+  //白ルーク下からコマが外れる場合の確認
+  public void check2 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[0][0] = new Rook("♜", 5, false, new Position(0, 0), 7, 0, 0, 1);
+    board[1][0] = new Rook("♖", 5, true, new Position(1, 0), 0, 3, 6, 1);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+
+    setBoard(board);
+  }
+  //白ルーク右からコマが外れる場合の確認
+  public void check3 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][0] = new Rook("♖", 5, true, new Position(1, 0), 0, 3, 6, 1);
+    board[1][1] = new Rook("♜", 5, false, new Position(1, 1), 3, 1, 1, 6);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+
+    setBoard(board);
+  }
+  //白ルーク左からコマが外れる場合の確認
+  public void check4 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][0] = new Rook("♜", 5, false, new Position(1, 0), 1, 0, 1, 6);
+    board[1][1] = new Rook("♖", 5, true, new Position(1, 1), 1, 2, 6, 1);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+
+    setBoard(board);
+  }
+  //黒ルーク上からコマが外れる場合の確認
+  public void check5 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][2] = new Rook("♖", 5, true, new Position(1, 2), 2, 1, 1, 1);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 1, 5);
+    setBoard(board);
+  }
+  //黒ルーク下からコマが外れる場合の確認
+  public void check6 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 2, 2, 1);
+    board[3][2] = new Rook("♖", 5, true, new Position(3, 2), 2, 5, 4, 1);
+    setBoard(board);
+  }
+  //黒ルーク右からコマが外れる場合の確認
+  public void check7 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 5, 1, 2, 5);
+    board[2][1] = new Rook("♖", 5, true, new Position(2, 1), 1, 1, 5, 2);
+    setBoard(board);
+  }
+  //黒ルーク左からコマが外れる場合の確認
+  public void check8 () {
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+    board[2][2] = new Rook("♜", 5, false, new Position(2, 2), 3, 2, 2, 5);
+    board[2][5] = new Rook("♖", 5, true, new Position(2, 5), 3, 2, 5, 2);
     setBoard(board);
   }
 

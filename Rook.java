@@ -49,18 +49,19 @@ public class Rook extends Piece {
 
   @Override
   public boolean isValidMove(Position newPosition) {
-    int rowDiff = Math.abs(newPosition.getRow()-this.getPosition().getRow());
-    int colDiff = Math.abs(newPosition.getCol()-this.getPosition().getCol());
+      int rowDiff = newPosition.getRow()-this.getPosition().getRow();
+      int colDiff = newPosition.getCol()-this.getPosition().getCol();
+
     return super.isValidMove(newPosition) &&
         (
-          isWhite && getLeft()>=1 && colDiff<=getLeft() && colDiff>=1 && rowDiff==0
-          || isWhite && getRight()>=1 && colDiff<=getRight() && colDiff>=1 && rowDiff==0
-          || isWhite && getUp()>=1 && colDiff==0 && rowDiff<=getUp() && rowDiff>=1
-          || isWhite && getDown()>=1 && colDiff==0 && rowDiff<=getDown() && rowDiff>=1
-          || !isWhite && getLeft()>=1 && colDiff<=getLeft() && colDiff>=1 && rowDiff==0
-          || !isWhite && getRight()>=1 && colDiff<=getRight() &&colDiff>=1 && rowDiff==0
-          || !isWhite && getUp()>=1 && colDiff==0 && rowDiff<=getUp() && rowDiff>=1
-          || !isWhite && getDown()>=1 && colDiff==0 && rowDiff<=getDown() && rowDiff>=1
+            (isWhite && getLeft()>=1 && Math.abs(colDiff)<=getLeft() && colDiff<=-1 && rowDiff==0)
+          || (isWhite && getRight()>=1 && colDiff<=getRight() && colDiff>=1 && rowDiff==0)
+          || (isWhite && getUp()>=1 && colDiff==0 && rowDiff<=getUp() && rowDiff>=1)
+          || (isWhite && getDown()>=1 && colDiff==0 && Math.abs(rowDiff)<=getDown() && rowDiff<=-1)
+          || (!isWhite && getLeft()>=1 && colDiff<=getLeft() && colDiff>=1 && rowDiff==0)
+          || (!isWhite && getRight()>=1 && Math.abs(colDiff)<=getRight() && colDiff<=-1 && rowDiff==0)
+          || (!isWhite && getUp()>=1 && colDiff==0 && Math.abs(rowDiff)<=getUp() && rowDiff<=-1)
+          || (!isWhite && getDown()>=1 && colDiff==0 && rowDiff<=getDown() && rowDiff>=1)
          );
   }
 

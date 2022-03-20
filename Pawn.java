@@ -82,32 +82,32 @@ public class Pawn extends Piece {
 
   @Override
   public boolean isValidMove(Position newPosition) {
-    int rowDiff = Math.abs(newPosition.getRow()-this.getPosition().getRow());
-    int colDiff = Math.abs(newPosition.getCol()-this.getPosition().getCol());
+    int rowDiff = newPosition.getRow()-this.getPosition().getRow();
+    int colDiff = newPosition.getCol()-this.getPosition().getCol();
     if(getNewPiece() instanceof Rook){
       return super.isValidMove(newPosition) &&
           (
-              isWhite && ((Rook)getNewPiece()).getLeft()>=1 && colDiff<=((Rook)getNewPiece()).getLeft() && colDiff>=1 && rowDiff==0
-              || isWhite &&  ((Rook)getNewPiece()).getRight()>=1 && colDiff<=((Rook)getNewPiece()).getRight() && colDiff>=1 && rowDiff==0
-              || isWhite &&  ((Rook)getNewPiece()).getUp()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getUp() && rowDiff>=1
-              || isWhite &&  ((Rook)getNewPiece()).getDown()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getDown() && rowDiff>=1
-              || !isWhite &&  ((Rook)getNewPiece()).getLeft()>=1 && colDiff<=((Rook)getNewPiece()).getLeft() && colDiff>=1 && rowDiff==0
-              || !isWhite &&  ((Rook)getNewPiece()).getRight()>=1 && colDiff<=((Rook)getNewPiece()).getRight() &&colDiff>=1 && rowDiff==0
-              || !isWhite &&  ((Rook)getNewPiece()).getUp()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getUp() && rowDiff>=1
-              || !isWhite &&  ((Rook)getNewPiece()).getDown()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getDown() && rowDiff>=1
+                (isWhite && ((Rook)getNewPiece()).getLeft()>=1 && Math.abs(colDiff)<=((Rook)getNewPiece()).getLeft() && colDiff<=-1 && rowDiff==0)
+              || (isWhite && ((Rook)getNewPiece()).getRight()>=1 && colDiff<=((Rook)getNewPiece()).getRight() && colDiff>=1 && rowDiff==0)
+              || (isWhite && ((Rook)getNewPiece()).getUp()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getUp() && rowDiff>=1)
+              || (isWhite && ((Rook)getNewPiece()).getDown()>=1 && colDiff==0 && Math.abs(rowDiff)<=((Rook)getNewPiece()).getDown() && rowDiff<=-1)
+              || (!isWhite && ((Rook)getNewPiece()).getLeft()>=1 && colDiff<=((Rook)getNewPiece()).getLeft() && colDiff>=1 && rowDiff==0)
+              || (!isWhite && ((Rook)getNewPiece()).getRight()>=1 && Math.abs(colDiff)<=((Rook)getNewPiece()).getRight() && colDiff<=-1 && rowDiff==0)
+              || (!isWhite && ((Rook)getNewPiece()).getUp()>=1 && colDiff==0 && Math.abs(rowDiff)<=((Rook)getNewPiece()).getUp() && rowDiff<=-1)
+              || (!isWhite && ((Rook)getNewPiece()).getDown()>=1 && colDiff==0 && rowDiff<=((Rook)getNewPiece()).getDown() && rowDiff>=1)
           );
     }else {
       return super.isValidMove(newPosition)
           && (
-          isFirstMove() && isWhite && rowDiff==2 && colDiff==0
-              || isFirstMove() && !isWhite && rowDiff==2 && colDiff==0
-              || !isFront() && isWhite && rowDiff==1 && colDiff==0
-              || !isFront() && !isWhite && rowDiff==1 && colDiff==0
-              || isLeftFront() && isWhite && rowDiff==1 && colDiff==1
-              || isLeftFront() && !isWhite && rowDiff==1 && colDiff==1
-              || isRightFront() && isWhite && rowDiff==1 && colDiff==1
-              || isRightFront() && !isWhite && rowDiff==1 && colDiff==1
-      );
+           (isFirstMove() && isWhite && rowDiff==2 && colDiff==0)
+          || (isFirstMove() && !isWhite && Math.abs(rowDiff)==2 && colDiff==0)
+          || (!isFront() && isWhite && rowDiff==1 && colDiff==0)
+          || (!isFront() && !isWhite && Math.abs(rowDiff)==1 && colDiff==0)
+          || (isLeftFront() && isWhite && rowDiff==1 && Math.abs(colDiff)==1)
+          || (isLeftFront() && !isWhite && Math.abs(rowDiff)==1 && colDiff==1)
+          || (isRightFront() && isWhite && rowDiff==1 && colDiff==1)
+          || (isRightFront() && !isWhite && Math.abs(rowDiff)==1 && Math.abs(colDiff)==1)
+        );
     }
   }
 
