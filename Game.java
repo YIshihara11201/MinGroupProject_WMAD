@@ -124,15 +124,13 @@ public class Game {
     }
 
     Piece targetPiece = getBoard()[row][col];
-    if(targetPiece instanceof Pawn && ((Pawn) targetPiece).getNewPiece() != null){
-      targetPiece = ((Pawn)targetPiece).getNewPiece();
-    }
+
     System.out.println(targetPiece);
     List<String> validCells = new ArrayList<>();
     for (int i = 0; i < COL_RANGE; i++) {
       for (int j = 0; j < ROW_RANGE; j++) {
-        if (targetPiece.isValidMove(new Position(j, i))
-            && (getBoard()[j][i] == null || targetPiece.isWhite != getBoard()[j][i].isWhite)) {
+        if (targetPiece.isValidMove(new Position(j, i))){
+//            && (getBoard()[j][i] == null || targetPiece.isWhite != getBoard()[j][i].isWhite)) {
           String colStr = convertColFromNumToAlphabet(i);
           String rowStr = Integer.toString(j + 1);
           validCells.add(colStr + rowStr);
@@ -206,15 +204,18 @@ public class Game {
       getBoard()[targetRow][targetCol] = getBoard()[currRow][currCol];
       getBoard()[currRow][currCol] = null;
 
-      promotePawn(targetRow, targetCol);
+      if(targetRow==0 || targetRow==ROW_RANGE-1){
+        promotePawn(targetRow, targetCol);
+      }
+
 
       //****** TODO ********
-      // Add setting for moving pieces
+      // renew setting for moving piece
       setSurroundingStateOfMovingPawn(targetRow, targetCol);
       setSurroundingStateOfMovingRook(targetRow, targetCol);
 
       //****** TODO ********
-      // Add setting for surrounding state for pieces affected by moving piece
+      // renew setting for surrounding state for pieces affected by moving piece
       setSurroundingStateOfOtherPawn(currRow, currCol, targetRow, targetCol);
       setSurroundingStateOfOtherRook(currRow, currCol, targetRow, targetCol);
 
@@ -644,243 +645,261 @@ public class Game {
     // set movable area for Rook when its available area is affected by other piece's move
 
     // when target cell hits black Rook's left-hand movable area
-    int ColOfBlackRookLeftFromTargetPiece= -1;
+    int AbsColOfBlackRookLeftFromTargetPiece = -1;
+    int MovableColOfBlackRookRight = -1;
     for(int i=targetCol-1; i>=0; i--) {
       if (getBoard()[targetRow][i]!=null
           && (getBoard()[targetRow][i] instanceof Rook
             || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
           && !getBoard()[targetRow][i].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) ColOfBlackRookLeftFromTargetPiece = i;
-        else ColOfBlackRookLeftFromTargetPiece = i-1;
+        AbsColOfBlackRookLeftFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite){
+          MovableColOfBlackRookRight = i;
+        }
+        else {
+          MovableColOfBlackRookRight = i-1;
+        }
         break;
       }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
         break;
       }
     }
-    if(ColOfBlackRookLeftFromTargetPiece != -1) {
-      System.out.println(getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Rook);
-      if(getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Rook){
-        ((Rook)getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece])
-            .setLeft(targetCol-ColOfBlackRookLeftFromTargetPiece);
+    if(AbsColOfBlackRookLeftFromTargetPiece != -1) {
+
+      if(getBoard()[targetRow][AbsColOfBlackRookLeftFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][AbsColOfBlackRookLeftFromTargetPiece])
+            .setLeft(targetCol-MovableColOfBlackRookRight);
       }else if(
-          getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Pawn
-          && ((Pawn) getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
+          getBoard()[targetRow][AbsColOfBlackRookLeftFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][AbsColOfBlackRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn) getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece])
+        ((Rook)((Pawn) getBoard()[targetRow][AbsColOfBlackRookLeftFromTargetPiece])
             .getNewPiece())
-            .setLeft(targetCol-ColOfBlackRookLeftFromTargetPiece);
+            .setLeft(targetCol-MovableColOfBlackRookRight);
       }
     }
 
     // // when target cell hits black Rook's right-hand movable area
-    int ColBlackRookRightFromTargetPiece= -1;
+    int AbsColOfBlackRookRightFromTargetPiece = -1;
+    int MovableColOfBlackRookLeft = -1;
     for(int i=targetCol+1; i<COL_RANGE; i++){
       if(getBoard()[targetRow][i]!=null
           && (getBoard()[targetRow][i] instanceof Rook
             || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
           && !getBoard()[targetRow][i].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) ColBlackRookRightFromTargetPiece= i;
-        else ColBlackRookRightFromTargetPiece = i-1;
+        AbsColOfBlackRookRightFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableColOfBlackRookLeft= i;
+        else MovableColOfBlackRookLeft = i-1;
         break;
       }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
         break;
       }
     }
-    if(ColBlackRookRightFromTargetPiece != -1) {
+    if(AbsColOfBlackRookRightFromTargetPiece != -1) {
 
-      if(getBoard()[targetRow][ColBlackRookRightFromTargetPiece] instanceof Rook){
-        ((Rook)getBoard()[targetRow][ColBlackRookRightFromTargetPiece])
-            .setRight(ColBlackRookRightFromTargetPiece-targetCol);
+      if(getBoard()[targetRow][AbsColOfBlackRookRightFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][AbsColOfBlackRookRightFromTargetPiece])
+            .setRight(MovableColOfBlackRookLeft-targetCol);
       }else if(
-          getBoard()[targetRow][ColBlackRookRightFromTargetPiece] instanceof Pawn
-          && ((Pawn) getBoard()[targetRow][ColBlackRookRightFromTargetPiece]).getNewPiece() instanceof Rook
+          getBoard()[targetRow][AbsColOfBlackRookRightFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][AbsColOfBlackRookRightFromTargetPiece]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn) getBoard()[targetRow][ColBlackRookRightFromTargetPiece])
+        ((Rook)((Pawn) getBoard()[targetRow][AbsColOfBlackRookRightFromTargetPiece])
             .getNewPiece())
-            .setRight(ColBlackRookRightFromTargetPiece-targetCol);
+            .setRight(MovableColOfBlackRookLeft-targetCol);
       }
     }
 
     // // when target cell hits black Rook's upper movable area
-    int RowOfBlackRookUpFromTargetPiece= -1;
+    int AbsColOfBlackRookUpFromTargetPiece = -1;
+    int MovableRowOfBlackRookDown = -1;
     for(int i=targetRow+1; i<ROW_RANGE; i++){
       if(getBoard()[i][targetCol]!=null
           && (getBoard()[i][targetCol] instanceof Rook
             || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
           && !getBoard()[i][targetCol].isWhite
       ){
+        AbsColOfBlackRookUpFromTargetPiece = i;
         if(getBoard()[targetRow][targetCol].isWhite) {
-          RowOfBlackRookUpFromTargetPiece= i;
+          MovableRowOfBlackRookDown= i;
         }
-        else RowOfBlackRookUpFromTargetPiece = i-1;
+        else MovableRowOfBlackRookDown = i-1;
         break;
       }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
         break;
       }
     }
-
-    if(RowOfBlackRookUpFromTargetPiece != -1) {
-      System.out.println(RowOfBlackRookUpFromTargetPiece-targetRow);
-      System.out.println(getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol]);
-      if (getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol] instanceof Rook) {
-
-        ((Rook)getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol])
-            .setUp(RowOfBlackRookUpFromTargetPiece-targetRow);
-
+    if(AbsColOfBlackRookUpFromTargetPiece != -1) {
+      if (getBoard()[AbsColOfBlackRookUpFromTargetPiece][targetCol] instanceof Rook) {
+        ((Rook)getBoard()[AbsColOfBlackRookUpFromTargetPiece][targetCol])
+            .setUp(MovableRowOfBlackRookDown-targetRow);
       }else if(
-          getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol] instanceof Pawn
-          && ((Pawn) getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+          getBoard()[AbsColOfBlackRookUpFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[AbsColOfBlackRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn) getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol])
+        ((Rook)((Pawn) getBoard()[AbsColOfBlackRookUpFromTargetPiece][targetCol])
             .getNewPiece())
-            .setUp(RowOfBlackRookUpFromTargetPiece-targetRow);
+            .setUp(MovableRowOfBlackRookDown-targetRow);
       }
     }
 
     // // when target cell hits black Rook's lower movable area
-    int RowOfBlackRookDownFromTargetPiece= -1;
+    int AbsColOfBlackRookDownFromTargetPiece = -1;
+    int MovableRowOfBlackRookUp = -1;
     for(int i=targetRow-1; i>=0; i--){
       if(getBoard()[i][targetCol]!=null
           && (getBoard()[i][targetCol] instanceof Rook
               || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
           && !getBoard()[i][targetCol].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) RowOfBlackRookDownFromTargetPiece= i-1;
-        else RowOfBlackRookDownFromTargetPiece = i;
+        AbsColOfBlackRookDownFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableRowOfBlackRookUp= i-1;
+        else MovableRowOfBlackRookUp = i;
         break;
       }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
         break;
       }
     }
-    if(RowOfBlackRookDownFromTargetPiece != -1) {
-      if(getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol] instanceof Rook){
-        ((Rook)getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol])
-            .setDown(targetRow-RowOfBlackRookDownFromTargetPiece);
+    if(AbsColOfBlackRookDownFromTargetPiece != -1) {
+      if(getBoard()[AbsColOfBlackRookDownFromTargetPiece][targetCol] instanceof Rook){
+        ((Rook)getBoard()[AbsColOfBlackRookDownFromTargetPiece][targetCol])
+            .setDown(targetRow-MovableRowOfBlackRookUp);
       }else if(
-          getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol] instanceof Pawn
-          && ((Pawn) getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+          getBoard()[AbsColOfBlackRookDownFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[AbsColOfBlackRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn) getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol])
+        ((Rook)((Pawn) getBoard()[AbsColOfBlackRookDownFromTargetPiece][targetCol])
             .getNewPiece())
-            .setDown(targetRow-RowOfBlackRookDownFromTargetPiece);
+            .setDown(targetRow-MovableRowOfBlackRookUp);
       }
     }
 
     // when target cell hits white Rook's right-hand movable area
-    int ColOfWhiteRookLeftFromTargetPiece= -1;
+    int AbsColOfWhiteRookLeftFromTargetPiece = -1;
+    int MovableColOfWhiteRookRight = -1;
     for(int i=targetCol-1; i>=0; i--){
       if(getBoard()[targetRow][i]!=null
           && (getBoard()[targetRow][i] instanceof Rook
             || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
           && getBoard()[targetRow][i].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) ColOfWhiteRookLeftFromTargetPiece= i;
-        else ColOfWhiteRookLeftFromTargetPiece = i-1;
+        AbsColOfWhiteRookLeftFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableColOfWhiteRookRight= i;
+        else MovableColOfWhiteRookRight = i-1;
         break;
       }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
         break;
       }
     }
-    if(ColOfWhiteRookLeftFromTargetPiece != -1) {
-      if(getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece] instanceof Rook){
-        ((Rook)getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece])
-            .setRight(targetCol-ColOfWhiteRookLeftFromTargetPiece-1);
+    if(AbsColOfWhiteRookLeftFromTargetPiece != -1) {
+      if(getBoard()[targetRow][AbsColOfWhiteRookLeftFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][AbsColOfWhiteRookLeftFromTargetPiece])
+            .setRight(targetCol-MovableColOfWhiteRookRight);
       }else if(
-          getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece] instanceof Pawn
-          && ((Pawn) getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
+          getBoard()[targetRow][AbsColOfWhiteRookLeftFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][AbsColOfWhiteRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn)getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece])
+        ((Rook)((Pawn)getBoard()[targetRow][AbsColOfWhiteRookLeftFromTargetPiece])
             .getNewPiece())
-            .setRight(targetCol-ColOfWhiteRookLeftFromTargetPiece);
+            .setRight(targetCol-MovableColOfWhiteRookRight);
       }
     }
 
     // when target cell hits white Rook's left-hand movable area
-    int ColOfWhiteRookRightFromTargetPiece= -1;
+    int AbsColOfWhiteRookRightFromTargetPiece = -1;
+    int MovableColOfWhiteRookLeft = -1;
     for(int i=targetCol+1; i<COL_RANGE; i++){
       if(getBoard()[targetRow][i]!=null
           && (getBoard()[targetRow][i] instanceof Rook
             || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
           && getBoard()[targetRow][i].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) ColOfWhiteRookRightFromTargetPiece= i-1;
-        else ColOfWhiteRookRightFromTargetPiece = i;
+        AbsColOfWhiteRookRightFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableColOfWhiteRookLeft= i-1;
+        else MovableColOfWhiteRookLeft = i;
         break;
       }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
         break;
       }
     }
-    if(ColOfWhiteRookRightFromTargetPiece != -1) {
-      if(getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece] instanceof Rook){
-        ((Rook)getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece])
-            .setLeft(ColOfWhiteRookRightFromTargetPiece-targetCol-1);
+    if(AbsColOfWhiteRookRightFromTargetPiece != -1) {
+      if(getBoard()[targetRow][AbsColOfWhiteRookRightFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][AbsColOfWhiteRookRightFromTargetPiece])
+            .setLeft(MovableColOfWhiteRookLeft-targetCol);
       }else if(
-          getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece] instanceof Pawn
-          && ((Pawn) getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece]).getNewPiece() instanceof Rook
+          getBoard()[targetRow][AbsColOfWhiteRookRightFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][AbsColOfWhiteRookRightFromTargetPiece]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn)getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece])
+        ((Rook)((Pawn)getBoard()[targetRow][AbsColOfWhiteRookRightFromTargetPiece])
             .getNewPiece())
-            .setLeft(ColOfWhiteRookRightFromTargetPiece-targetCol);
+            .setLeft(MovableColOfWhiteRookLeft-targetCol);
       }
     }
 
     // when target cell hits white Rook's upper movable area
-    int RowOfWhiteRookDownFromTargetPiece= -1;
+    int AbsRowOfWhiteRookDownFromTargetPiece = -1;
+    int MovableRowOfWhiteRookUp = -1;
     for(int i=targetRow-1; i>=0; i--){
       if(getBoard()[i][targetCol]!=null
           && (getBoard()[i][targetCol] instanceof Rook
             || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
           && getBoard()[i][targetCol].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) RowOfWhiteRookDownFromTargetPiece= i;
-        else RowOfWhiteRookDownFromTargetPiece = i-1;
+        AbsRowOfWhiteRookDownFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) {
+          MovableRowOfWhiteRookUp= i+1;
+        }
+        else MovableRowOfWhiteRookUp = i;
         break;
       }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
         break;
       }
     }
-    if(RowOfWhiteRookDownFromTargetPiece != -1) {
-      if(getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Rook){
-        ((Rook)getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol])
-            .setUp(targetRow-RowOfWhiteRookDownFromTargetPiece);
+    if(AbsRowOfWhiteRookDownFromTargetPiece != -1) {
+      if(getBoard()[AbsRowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Rook){
+        System.out.println(AbsRowOfWhiteRookDownFromTargetPiece);
+        ((Rook)getBoard()[AbsRowOfWhiteRookDownFromTargetPiece][targetCol])
+            .setUp(targetRow-MovableRowOfWhiteRookUp);
       }else if(
-          getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Pawn
-          && ((Pawn) getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+          getBoard()[AbsRowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[AbsRowOfWhiteRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
       ){
-        ((Rook)((Pawn)getBoard()[targetRow][RowOfWhiteRookDownFromTargetPiece])
+        ((Rook)((Pawn)getBoard()[AbsRowOfWhiteRookDownFromTargetPiece][targetCol])
             .getNewPiece())
-            .setUp(targetRow-RowOfWhiteRookDownFromTargetPiece);
+            .setUp(targetRow-MovableRowOfWhiteRookUp);
       }
     }
 
     // when target cell hits white Rook's lower movable area
-    int RowOfWhiteRookUpFromTargetPiece= -1;
+    int AbsRowOfWhiteRookUpFromTargetPiece = -1;
+    int MovableRowOfWhiteRookDown = -1;
     for(int i=targetRow+1; i<ROW_RANGE; i++){
       if(getBoard()[i][targetCol]!=null
           && (getBoard()[i][targetCol] instanceof Rook
             || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
           && getBoard()[i][targetCol].isWhite
       ){
-        if(getBoard()[targetRow][targetCol].isWhite) RowOfWhiteRookUpFromTargetPiece= i-1;
-        else RowOfWhiteRookUpFromTargetPiece = i;
+        AbsRowOfWhiteRookUpFromTargetPiece = i;
+        if(getBoard()[targetRow][targetCol].isWhite) MovableRowOfWhiteRookDown= i-1;
+        else MovableRowOfWhiteRookDown = i;
         break;
       }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
         break;
       }
     }
-    if(RowOfWhiteRookUpFromTargetPiece != -1) {
-      if(getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Rook){
-        ((Rook)getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol])
-            .setDown(RowOfWhiteRookUpFromTargetPiece-targetRow);
+    if(AbsRowOfWhiteRookUpFromTargetPiece != -1) {
+      if(getBoard()[AbsRowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Rook){
+        ((Rook)getBoard()[AbsRowOfWhiteRookUpFromTargetPiece][targetCol])
+            .setDown(MovableRowOfWhiteRookDown-targetRow);
       }else if(
-          getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Pawn
-          && ((Pawn) getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+          getBoard()[AbsRowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[AbsRowOfWhiteRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
       ) {
-        ((Rook)((Pawn) getBoard()[targetRow][RowOfWhiteRookUpFromTargetPiece])
+        ((Rook)((Pawn) getBoard()[AbsRowOfWhiteRookUpFromTargetPiece][targetCol])
             .getNewPiece())
-            .setDown(RowOfWhiteRookUpFromTargetPiece - targetRow);
+            .setDown(MovableRowOfWhiteRookDown-targetRow);
       }
     }
 
@@ -908,10 +927,11 @@ public class Game {
             if(getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol].isWhite!=getBoard()[i][currCol].isWhite){
               updatedRowOfWhiteUpOrBlackDownForRook = i;
             }
-            else updatedRowOfWhiteUpOrBlackDownForRook = i-1;
+            else {
+              updatedRowOfWhiteUpOrBlackDownForRook = i-1;
+            }
           }
         }
-
         if(updatedRowOfWhiteUpOrBlackDownForRook==-1){
           updatedRowOfWhiteUpOrBlackDownForRook = ROW_RANGE-1;
         }

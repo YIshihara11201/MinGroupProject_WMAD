@@ -49,16 +49,18 @@ public class Rook extends Piece {
 
   @Override
   public boolean isValidMove(Position newPosition) {
+    int rowDiff = Math.abs(newPosition.getRow()-this.getPosition().getRow());
+    int colDiff = Math.abs(newPosition.getCol()-this.getPosition().getCol());
     return super.isValidMove(newPosition) &&
         (
-          isWhite && getLeft()>=1 && (this.getPosition().getCol()-newPosition.getCol())<=getLeft() && (this.getPosition().getCol()-newPosition.getCol())>=1 && (this.getPosition().getRow()-newPosition.getRow())==0
-          || isWhite && getRight()>=1 && (newPosition.getCol()-this.getPosition().getCol())<=getRight() && (newPosition.getCol()-this.getPosition().getCol())>=1 && (this.getPosition().getRow()-newPosition.getRow())==0
-          || isWhite && getUp()>=1 && (newPosition.getCol()-this.getPosition().getCol())==0 && (newPosition.getRow()-this.getPosition().getRow())<=getUp() && (newPosition.getRow()-this.getPosition().getRow())>=1
-          || isWhite && getDown()>=1 && (newPosition.getCol()-this.getPosition().getCol())==0 && (this.getPosition().getRow()-newPosition.getRow())<=getUp() && (this.getPosition().getRow()-newPosition.getRow())>=1
-          || !isWhite && getLeft()>=1 && (newPosition.getCol()-this.getPosition().getCol())<=getLeft() && (newPosition.getCol()-this.getPosition().getCol())>=1 && (this.getPosition().getRow()-newPosition.getRow())==0
-          || !isWhite && getRight()>=1 && (this.getPosition().getCol()-newPosition.getCol())<=getRight() && (this.getPosition().getCol()-newPosition.getCol())>=1 && (this.getPosition().getRow()-newPosition.getRow())==0
-          || !isWhite && getUp()>=1 && (newPosition.getCol()-this.getPosition().getCol())==0 && (this.getPosition().getRow()-newPosition.getRow())<=getUp() && (this.getPosition().getRow()-newPosition.getRow())>=1
-          || !isWhite && getDown()>=1 && (newPosition.getCol()-this.getPosition().getCol())==0 && (newPosition.getRow()-this.getPosition().getRow())<=getUp() && (newPosition.getRow()-this.getPosition().getRow())>=1
+          isWhite && getLeft()>=1 && colDiff<=getLeft() && colDiff>=1 && rowDiff==0
+          || isWhite && getRight()>=1 && colDiff<=getRight() && colDiff>=1 && rowDiff==0
+          || isWhite && getUp()>=1 && colDiff==0 && rowDiff<=getUp() && rowDiff>=1
+          || isWhite && getDown()>=1 && colDiff==0 && rowDiff<=getDown() && rowDiff>=1
+          || !isWhite && getLeft()>=1 && colDiff<=getLeft() && colDiff>=1 && rowDiff==0
+          || !isWhite && getRight()>=1 && colDiff<=getRight() &&colDiff>=1 && rowDiff==0
+          || !isWhite && getUp()>=1 && colDiff==0 && rowDiff<=getUp() && rowDiff>=1
+          || !isWhite && getDown()>=1 && colDiff==0 && rowDiff<=getDown() && rowDiff>=1
          );
   }
 
