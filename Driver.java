@@ -27,10 +27,6 @@ public class Driver {
       }else if(input.equals("quit")){
         System.out.println("Thank you for playing!!");
         break;
-      }
-      else if(input.equals("moves")){
-        //to be updated
-
       }else if(input.length()==2){
         try{
           game.showAvailableCell(input);

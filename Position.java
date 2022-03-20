@@ -3,12 +3,10 @@ package GroupMiniProject;
 public class Position {
   private int row;
   private int col;
-  private boolean ep;
 
   public Position(int row, int col){
     setRow(row);
     setCol(col);
-    setEp(false);
   }
 
   public int getRow() {
@@ -25,14 +23,6 @@ public class Position {
 
   public void setCol(int col) {
     this.col = col;
-  }
-
-  public boolean isEp() {
-    return ep;
-  }
-
-  public void setEp(boolean ep) {
-    this.ep = ep;
   }
 
   @Override

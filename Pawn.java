@@ -6,17 +6,19 @@ public class Pawn extends Piece {
   private boolean leftFront;
   private boolean front;
   private boolean rightFront;
+  private boolean epFlag;
   private boolean promoted;
   private Piece newPiece;
 
   public Pawn(String symbol, int value, boolean isWhite, Position position,
-      boolean isFirstMove, boolean leftFront, boolean front, boolean rightFront,
+      boolean isFirstMove, boolean leftFront, boolean front, boolean rightFront, boolean epFlag,
       boolean promoted, Piece newPiece) {
     super(symbol, value, isWhite, position);
     this.setFirstMove(isFirstMove);
     this.setLeftFront(leftFront);
     this.setFront(front);
     this.setRightFront(rightFront);
+    this.setEpFlag(epFlag);
     this.setPromoted(promoted);
     this.setNewPiece(newPiece);
   }
@@ -53,6 +55,10 @@ public class Pawn extends Piece {
     this.rightFront = rightFront;
   }
 
+  public boolean isEpFlag() { return epFlag; }
+
+  public void setEpFlag(boolean epFlag) { this.epFlag = epFlag; }
+
   public boolean isPromoted() {
     return promoted;
   }
@@ -86,10 +92,6 @@ public class Pawn extends Piece {
         || isLeftFront() && !isWhite && this.getPosition().getRow()-newPosition.getRow()==1 && newPosition.getCol()-this.getPosition().getCol()==1
         || isRightFront() && isWhite && newPosition.getRow()-this.getPosition().getRow()==1 && newPosition.getCol()-this.getPosition().getCol()==1
         || isRightFront() && !isWhite && this.getPosition().getRow()-newPosition.getRow()==1 && this.getPosition().getCol()-newPosition.getCol()==1
-        || newPosition.isEp() && isWhite && newPosition.getRow()-this.getPosition().getRow()==1 && this.getPosition().getCol()-newPosition.getCol()==1
-        || newPosition.isEp() && !isWhite && this.getPosition().getRow()-newPosition.getRow()==1 && newPosition.getCol()-this.getPosition().getCol()==1
-        || newPosition.isEp() && isWhite && newPosition.getRow()-this.getPosition().getRow()==1 && newPosition.getCol()-this.getPosition().getCol()==1
-        || newPosition.isEp() && !isWhite && this.getPosition().getRow()-newPosition.getRow()==1 && this.getPosition().getCol()-newPosition.getCol()==1
       );
   }
 

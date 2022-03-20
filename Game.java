@@ -12,7 +12,10 @@ public class Game {
 
   private Piece[][] board;
   private int turn = 1;
+  private Pawn epPiece = null;
+
   private Integer[] resultRecord = new Integer[]{0, 0};
+
 
   // Constructor creates an empty board
   public Game() {
@@ -25,6 +28,14 @@ public class Game {
 
   public void setTurn(int turn) {
     this.turn = turn;
+  }
+
+  public Pawn getEpPiece() {
+    return epPiece;
+  }
+
+  public void setEpPiece(Pawn epPiece) {
+    this.epPiece = epPiece;
   }
 
   public Integer[] getResultRecord() {
@@ -48,7 +59,6 @@ public class Game {
     System.out.println("* type 'help' for help");
     System.out.println("* type 'board' to see the board again");
     System.out.println("* type 'resign' to resign");
-    System.out.println("* type 'moves' to list all possible moves");
     System.out.println("* type 'square' (e.g. b1, e2) to list possible moves for that square");
     System.out.println("* type 'UCI' (e.g. b1c3, e7e8) to make a move");
     System.out.println("* type 'quit' to end game");
@@ -62,8 +72,9 @@ public class Game {
         if (board[i][j] != null) {
           if(board[i][j] instanceof Pawn && ((Pawn) board[i][j]).isPromoted()){
             System.out.print(((Pawn) board[i][j]).getNewPiece().getSymbol() + "  ");
+          }else{
+            System.out.print(board[i][j].getSymbol() + "  ");
           }
-          System.out.print(board[i][j].getSymbol() + "  ");
         } else {
           System.out.print("•  ");
         }
@@ -113,12 +124,15 @@ public class Game {
     }
 
     Piece targetPiece = getBoard()[row][col];
+    if(targetPiece instanceof Pawn && ((Pawn) targetPiece).getNewPiece() != null){
+      targetPiece = ((Pawn)targetPiece).getNewPiece();
+    }
     System.out.println(targetPiece);
     List<String> validCells = new ArrayList<>();
     for (int i = 0; i < COL_RANGE; i++) {
       for (int j = 0; j < ROW_RANGE; j++) {
-        if (targetPiece.isValidMove(new Position(j, i))){
-//            && ((getBoard()[j][i] == null || targetPiece.isWhite != getBoard()[j][i].isWhite))) {
+        if (targetPiece.isValidMove(new Position(j, i))
+            && (getBoard()[j][i] == null || targetPiece.isWhite != getBoard()[j][i].isWhite)) {
           String colStr = convertColFromNumToAlphabet(i);
           String rowStr = Integer.toString(j + 1);
           validCells.add(colStr + rowStr);
@@ -130,7 +144,7 @@ public class Game {
     System.out.println();
   }
 
-  // 6.move functionality
+  // 5.move functionality
   public void movePiece(String move) throws Exception {
     int currCol = convertColFromAlphabetToNum(move.substring(0, 1));
     int targetCol = convertColFromAlphabetToNum(move.substring(2, 3));
@@ -153,11 +167,13 @@ public class Game {
     }
 
     Piece currentCell = getBoard()[currRow][currCol];
+    if(currentCell instanceof Pawn && ((Pawn) currentCell).getNewPiece() != null){
+      currentCell = ((Pawn)getBoard()[currRow][currCol]).getNewPiece();
+    }
     Piece targetCell = getBoard()[targetRow][targetCol];
 
     if (currentCell == null) {
-      throw new Exception(
-          "Invalid Input, no piece in cell[" + move.substring(0, 2) + "]. Try again");
+      throw new Exception("Invalid Input, no piece in cell[" + move.substring(0, 2) + "]. Try again");
     }
 
     if ((getTurn()%2==1 && !currentCell.isWhite)||(getTurn()%2==0 && currentCell.isWhite)) {
@@ -165,15 +181,14 @@ public class Game {
           "Invalid Input, you can't move opponent piece @[" + move.substring(0, 2) + "] . Try again");
     }
 
-    if ((targetCell != null && currentCell.isWhite == targetCell.isWhite)&&(targetCell instanceof Pawn && !targetCell.getPosition().isEp())) {
+    if ((targetCell != null && currentCell.isWhite == targetCell.isWhite)) {
       throw new Exception(
           "Invalid Input, cell[" + move.substring(2, 4) + "] has allies piece. Try again");
     }
 
     if (!currentCell.isValidMove(new Position(targetRow, targetCol))) {
       throw new Exception(
-          "Invalid Input, piece[" + move.substring(0, 2) + "] can't move to [" + move.substring(2,
-              4) + "]. Try again");
+          "Invalid Input, piece[" + move.substring(0, 2) + "] can't move to [" + move.substring(2, 4) + "]. Try again");
     }
 
     // 実際に動かす処理
@@ -181,49 +196,8 @@ public class Game {
       System.out.println("OK");
       System.out.println();
 
-      // epフラグがあがっているセルの１行先にあるPawnを動かすときはセルの仮置きpieceを削除する
-      if (currRow==3
-          && getBoard()[currRow][currCol].isWhite
-          && getBoard()[currRow][currCol] instanceof Pawn
-          && getBoard()[currRow-1][currCol].getPosition().isEp()) {
-        getBoard()[currRow-1][currCol]=null;
-      }
-      if (currRow==4
-          && !getBoard()[currRow][currCol].isWhite
-          && getBoard()[currRow][currCol] instanceof Pawn
-          && getBoard()[currRow+1][currCol].getPosition().isEp()) {
-        getBoard()[currRow+1][currCol]=null;
-      }
-
-      // アンパッサンの処理 動く先が相手コマの残像の時、本体も同時に消す
-      if(targetRow==5
-          && getBoard()[currRow][currCol].isWhite
-          && !getBoard()[targetRow][targetCol].isWhite
-          && getBoard()[targetRow][targetCol] instanceof Pawn
-          && getBoard()[targetRow][targetCol].getPosition().isEp()) {
-        getBoard()[targetRow-1][targetCol] = null;
-      }
-      if(targetRow==2
-          && !getBoard()[currRow][currCol].isWhite
-          && getBoard()[targetRow][targetCol].isWhite
-          && getBoard()[targetRow][targetCol] instanceof Pawn
-          && getBoard()[targetRow][targetCol].getPosition().isEp()){
-        getBoard()[targetRow+1][targetCol] = null;
-      }
-
-      // アンパッサンの処理 本体が取られるとき残像も同時に消す
-      if(targetRow==4
-          && getBoard()[currRow][currCol].isWhite
-          && getBoard()[targetRow+1][targetCol] instanceof Pawn
-          && getBoard()[targetRow+1][targetCol].getPosition().isEp()) {
-        getBoard()[targetRow+1][targetCol] = null;
-      }
-      if(targetRow==3
-          && !getBoard()[currRow][currCol].isWhite
-          && getBoard()[targetRow-1][targetCol] instanceof Pawn
-          && getBoard()[targetRow-1][targetCol].getPosition().isEp()){
-        getBoard()[targetRow-1][targetCol] = null;
-      }
+      // 動かす前のアンパサント周りの設定をする
+      checkFirstMoveAndEnPassant(currRow, currCol, targetRow);
 
       // コマのpositionプロパティを移動先のセルに設定する
       getBoard()[currRow][currCol].setPosition(new Position(targetRow, targetCol));
@@ -231,752 +205,934 @@ public class Game {
       // 目的のセルにコマを動かす
       getBoard()[targetRow][targetCol] = getBoard()[currRow][currCol];
       getBoard()[currRow][currCol] = null;
-      // 移動させた後のコマ
-      Piece updatedCell = getBoard()[targetRow][targetCol];
 
-      // Pawn が初期位置から2マス動いた時は１行手前に残像を作る
-      if(updatedCell.isWhite && updatedCell instanceof Pawn && ((Pawn) updatedCell).isFirstMove() && targetRow==3){
-        getBoard()[targetRow-1][targetCol] = new Pawn("X", 1, true, new Position(targetRow-1, targetCol), true, false, false, false, false, null);
-        getBoard()[targetRow-1][targetCol].getPosition().setEp(true);
-      }else if(!updatedCell.isWhite && updatedCell instanceof Pawn && ((Pawn) updatedCell).isFirstMove() && targetRow==4){
-        getBoard()[targetRow+1][targetCol] = new Pawn("X", 1, false, new Position(targetRow+1, targetCol), true, false, false, false, false, null);
-        getBoard()[targetRow+1][targetCol].getPosition().setEp(true);
+      // Pawn のプロモーションを行う
+      promotePawn(targetRow, targetCol);
+
+      setSurroundingStateOfMovingPawn(targetRow, targetCol);
+      setSurroundingStateOfMovingRook(targetRow, targetCol);
+
+      setSurroundingStateOfOtherPawn(currRow, currCol, targetRow, targetCol);
+      setSurroundingStateOfOtherRook(currRow, currCol, targetRow, targetCol);
+
+      printBoard();
+      System.out.println();
+    }
+  }
+
+  public void checkFirstMoveAndEnPassant(int currRow, int currCol,int targetRow){
+    //　２ターン前に動かしたポーンのepフラグがtrueの場合フラグをおろす
+    if(epPiece!=null && epPiece.isEpFlag()){
+      if((getTurn()%2==1 && epPiece.isWhite) || (getTurn()%2==0 && !epPiece.isWhite)){
+        setEpPiece(null);
+      }
+    }
+    if(getBoard()[currRow][currCol] instanceof  Pawn) {
+      // epフラグがtrueのPawnを動かすときはフラグをおろす
+      if ((currRow == 3 || currRow == 4)
+          && ((Pawn) getBoard()[currRow][currCol]).isEpFlag()) {
+        ((Pawn) getBoard()[currRow][currCol]).setEpFlag(false);
+      }
+
+      // Pawnを初期位置から2マス動かす時は、動かすPawnに対してepフラグをあげる
+      if ((targetRow == 3 || targetRow == 4)
+          && ((Pawn) getBoard()[currRow][currCol]).isFirstMove()) {
+        ((Pawn) getBoard()[currRow][currCol]).setEpFlag(true);
       }
 
       // 初期位置の Pawn を動かす場合は firstMoveフラグをおろす
-      if (updatedCell instanceof Pawn && ((Pawn) updatedCell).isFirstMove()) {
-        ((Pawn) updatedCell).setFirstMove(false);
+      if (((Pawn) getBoard()[currRow][currCol]).isFirstMove()) {
+        ((Pawn) getBoard()[currRow][currCol]).setFirstMove(false);
+      }
+    }
+  }
+
+  public void setSurroundingStateOfMovingPawn(int targetRow, int targetCol){
+    // Pawnを動かした後、そのPawnが次に動ける範囲を設定する
+    // アンパッサンの処理も記述
+    if (getBoard()[targetRow][targetCol] instanceof Pawn && !((Pawn) getBoard()[targetRow][targetCol]).isPromoted()) {
+
+      // 動く先が相手Pawnの残像の時、本体も同時に消す
+      if(targetRow==5
+          && getBoard()[targetRow-1][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow-1][targetCol]).isEpFlag()) {
+        getBoard()[targetRow-1][targetCol] = null;
+      }
+      if(targetRow==2
+          && getBoard()[targetRow+1][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow+1][targetCol]).isEpFlag()){
+        getBoard()[targetRow+1][targetCol] = null;
       }
 
-//       Pawnを動かした後、そのPawnが次に動ける範囲を設定する
-      if (updatedCell instanceof Pawn) {
-        //白のコマについて
-        if (updatedCell.isWhite && targetRow+1<ROW_RANGE) {
-          // １マス前にコマがあるかどうかチェック
-          ((Pawn) updatedCell).setFront(getBoard()[targetRow+1][targetCol]!=null && !getBoard()[targetRow+1][targetCol].isWhite);
-          // 斜め左前にコマがあるかどうかチェック
-          ((Pawn) updatedCell).setLeftFront(targetCol-1>=0 && getBoard()[targetRow+1][targetCol-1]!=null && !getBoard()[targetRow+1][targetCol-1].isWhite);
-          // 斜め右前にコマがあるかどうかチェック
-          ((Pawn) updatedCell).setRightFront(targetCol+1<COL_RANGE && getBoard()[targetRow+1][targetCol+1] != null && !getBoard()[targetRow+1][targetCol+1].isWhite);
+      //白のコマについて
+      if (getBoard()[targetRow][targetCol].isWhite && targetRow+1<ROW_RANGE) {
+        // １マス前にコマがあるかどうかチェック
+        ((Pawn) getBoard()[targetRow][targetCol]).setFront(getBoard()[targetRow+1][targetCol]!=null && !getBoard()[targetRow+1][targetCol].isWhite);
+        // 斜め左前にコマがあるかどうかチェック
+        ((Pawn) getBoard()[targetRow][targetCol]).setLeftFront(targetCol-1>=0 && getBoard()[targetRow+1][targetCol-1]!=null && !getBoard()[targetRow+1][targetCol-1].isWhite);
+        // 斜め右前にコマがあるかどうかチェック
+        ((Pawn) getBoard()[targetRow][targetCol]).setRightFront(targetCol+1<COL_RANGE && getBoard()[targetRow+1][targetCol+1] != null && !getBoard()[targetRow+1][targetCol+1].isWhite);
+
+        // 動かすPawnのepフラグがtrueかつ移動したセルの右隣に黒のPawnがある場合、その黒PawnのrightFrontフラグを立てる
+        if(
+            ((Pawn) getBoard()[targetRow][targetCol]).isEpFlag()
+                && targetCol+1<COL_RANGE
+                && getBoard()[targetRow][targetCol+1]!=null
+                && getBoard()[targetRow][targetCol+1] instanceof Pawn
+                && !getBoard()[targetRow][targetCol+1].isWhite
+        ){
+          ((Pawn) getBoard()[targetRow][targetCol+1]).setRightFront(true);
         }
-        // 黒のコマについて
-        if (!updatedCell.isWhite && targetRow-1>=0) {
-          ((Pawn) updatedCell).setFront(getBoard()[targetRow-1][targetCol] != null && getBoard()[targetRow-1][targetCol].isWhite);
-          ((Pawn) updatedCell).setLeftFront(targetCol+1<COL_RANGE && getBoard()[targetRow-1][targetCol+1] != null  && getBoard()[targetRow-1][targetCol+1].isWhite);
-          ((Pawn) updatedCell).setRightFront(targetCol-1>=0 && getBoard()[targetRow-1][targetCol-1]!=null  && getBoard()[targetRow-1][targetCol-1].isWhite);
+
+        // 動かすPawnのepフラグがtrueかつ移動したセルの左隣に黒のPawnがある場合、その黒PawnのleftFrontフラグを立てる
+        if(
+            ((Pawn) getBoard()[targetRow][targetCol]).isEpFlag()
+                && targetCol-1>=0
+                && getBoard()[targetRow][targetCol-1]!=null
+                && getBoard()[targetRow][targetCol-1] instanceof Pawn
+                && !getBoard()[targetRow][targetCol-1].isWhite
+        ){
+          ((Pawn) getBoard()[targetRow][targetCol-1]).setLeftFront(true);
         }
       }
+      // 黒のコマについて
+      if (!getBoard()[targetRow][targetCol].isWhite && targetRow-1>=0) {
+        ((Pawn) getBoard()[targetRow][targetCol]).setFront(getBoard()[targetRow-1][targetCol] != null && getBoard()[targetRow-1][targetCol].isWhite);
+        ((Pawn) getBoard()[targetRow][targetCol]).setLeftFront(targetCol+1<COL_RANGE && getBoard()[targetRow-1][targetCol+1] != null  && getBoard()[targetRow-1][targetCol+1].isWhite);
+        ((Pawn) getBoard()[targetRow][targetCol]).setRightFront(targetCol-1>=0 && getBoard()[targetRow-1][targetCol-1]!=null  && getBoard()[targetRow-1][targetCol-1].isWhite);
+        // 動かすPawnのepフラグがtrueかつ移動したセルの右隣に白のPawnがある場合、その白PawnのrightFrontフラグを立てる
+        if(
+            ((Pawn) getBoard()[targetRow][targetCol]).isEpFlag()
+                && targetCol-1>=0
+                && getBoard()[targetRow][targetCol-1]!=null
+                && getBoard()[targetRow][targetCol-1] instanceof Pawn
+                && getBoard()[targetRow][targetCol-1].isWhite
+        ){
+          ((Pawn) getBoard()[targetRow][targetCol-1]).setRightFront(true);
+        }
 
-      // Rookを動かした後、そのRookが次に動ける範囲を設定する
-      if (updatedCell instanceof Rook){
-        int right = 0;
-        int left = 0;
-        int up = 0;
-        int down = 0;
-        //白のコマについて
-        if (updatedCell.isWhite) {
-          // Rookの右何マス先にコマがあるかチェック
-          for(int i=targetCol; i<COL_RANGE-1; i++){
-            if((getBoard()[targetRow][i+1]!=null
-                && (getBoard()[targetRow][i+1] instanceof Pawn
-                && !(getBoard()[targetRow][i+1].getPosition().isEp())))
-              ||getBoard()[targetRow][i+1]!=null
-            ){
-              right = i-targetCol;
-              if(getBoard()[targetRow][i+1].isWhite != updatedCell.isWhite) right += 1;
-              break;
-            } else if(i+1==COL_RANGE-1 && getBoard()[targetRow][COL_RANGE-1]==null) right = COL_RANGE-1-targetCol;
-          }
+        // 動かすPawnのepフラグがtrueかつ移動したセルの左隣に黒のPawnがある場合、その黒PawnのleftFrontフラグを立てる
+        if(
+            ((Pawn) getBoard()[targetRow][targetCol]).isEpFlag()
+                && targetCol+1<COL_RANGE
+                && getBoard()[targetRow][targetCol+1]!=null
+                && getBoard()[targetRow][targetCol+1] instanceof Pawn
+                && getBoard()[targetRow][targetCol+1].isWhite
+        ){
+          ((Pawn) getBoard()[targetRow][targetCol-1]).setLeftFront(true);
+        }
+      }
+    }
+  }
 
-          // Rookの左何マス先にコマがあるかチェック
-          for(int i=targetCol; i>0; i--){
-            if((getBoard()[targetRow][i-1]!=null
-                && (getBoard()[targetRow][i-1] instanceof Pawn
-                && !getBoard()[targetRow][i-1].getPosition().isEp()))
-              ||getBoard()[targetRow][i-1]!=null
-            ){
-              left = targetCol-i;
-              if(getBoard()[targetRow][i-1].isWhite != updatedCell.isWhite) left += 1;
-              break;
-            }else if(i-1==0 && getBoard()[targetRow][0]==null) left = targetCol;
-          }
+  public void setSurroundingStateOfMovingRook(int targetRow, int targetCol){
+    if (getBoard()[targetRow][targetCol] instanceof Rook
+        ||(getBoard()[targetRow][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece() instanceof Rook)
+    ){
+      int right = 0;
+      int left = 0;
+      int up = 0;
+      int down = 0;
+      //白のコマについて
+      if (getBoard()[targetRow][targetCol].isWhite) {
+        // Rookの右何マス先にコマがあるかチェック
+        for(int i=targetCol; i<COL_RANGE-1; i++){
+          if(getBoard()[targetRow][i+1]!=null){
+            right = i-targetCol;
+            if(getBoard()[targetRow][i+1].isWhite != getBoard()[targetRow][targetCol].isWhite) right += 1;
+            break;
+          } else if(i+1==COL_RANGE-1 && getBoard()[targetRow][COL_RANGE-1]==null) right = COL_RANGE-1-targetCol;
+        }
 
-          // Rookの何マス上にコマがあるかチェック
-          for(int i=targetRow; i<ROW_RANGE-1; i++){
-            if((getBoard()[i+1][targetCol]!=null
-                && (getBoard()[i+1][targetCol] instanceof Pawn
-                && !getBoard()[i+1][targetCol].getPosition().isEp()))
-              ||getBoard()[i+1][targetCol]!=null
-            ){
-              up = i-targetRow;
-              if(getBoard()[i+1][targetCol].isWhite != updatedCell.isWhite) up += 1;
-              break;
-            }else if(i+1==ROW_RANGE-1 && getBoard()[ROW_RANGE-1][targetCol] == null) up = ROW_RANGE-1-targetRow;
-          }
+        // Rookの左何マス先にコマがあるかチェック
+        for(int i=targetCol; i>0; i--){
+          if(getBoard()[targetRow][i-1]!=null){
+            left = targetCol-i;
+            if(getBoard()[targetRow][i-1].isWhite != getBoard()[targetRow][targetCol].isWhite) left += 1;
+            break;
+          }else if(i-1==0 && getBoard()[targetRow][0]==null) left = targetCol;
+        }
 
-          // Rookの何マス下にコマがあるかチェック
-          for(int i=targetRow; i>0; i--){
-            if((getBoard()[i-1][targetCol]!=null
-                && (getBoard()[i-1][targetCol] instanceof Pawn
-                && !getBoard()[i-1][targetCol].getPosition().isEp()))
-              ||getBoard()[i-1][targetCol]!=null
-            ){
-              down = targetRow-i;
-              if(getBoard()[i-1][targetCol].isWhite != updatedCell.isWhite) down += 1;
-              break;
-            } else if(i-1==0 && getBoard()[0][targetCol]==null) down = targetRow;
-          }
+        // Rookの何マス上にコマがあるかチェック
+        for(int i=targetRow; i<ROW_RANGE-1; i++){
+          if(getBoard()[i+1][targetCol]!=null){
+            up = i-targetRow;
+            if(getBoard()[i+1][targetCol].isWhite != getBoard()[targetRow][targetCol].isWhite) up += 1;
+            break;
+          }else if(i+1==ROW_RANGE-1 && getBoard()[ROW_RANGE-1][targetCol] == null) up = ROW_RANGE-1-targetRow;
+        }
+
+        // Rookの何マス下にコマがあるかチェック
+        for(int i=targetRow; i>0; i--){
+          if(getBoard()[i-1][targetCol]!=null){
+            down = targetRow-i;
+            if(getBoard()[i-1][targetCol].isWhite != getBoard()[targetRow][targetCol].isWhite) down += 1;
+            break;
+          } else if(i-1==0 && getBoard()[0][targetCol]==null) down = targetRow;
+        }
 
         // 黒のコマについて
+      }else{
+        // Rookの右何マス先にコマがあるかチェック
+        for(int i=targetCol; i>0; i--){
+          if(getBoard()[targetRow][i-1]!=null){
+            right = targetCol-i;
+            if(getBoard()[targetRow][i-1].isWhite != getBoard()[targetRow][targetCol].isWhite) right += 1;
+            break;
+          }else if(i-1==0 &&  getBoard()[targetRow][0]==null) right = targetCol;
+        }
+
+        // Rookの左何マス先にコマがあるかチェック
+        for(int i=targetCol; i<COL_RANGE-1; i++){
+          if(getBoard()[targetRow][i+1]!=null){
+            left = i-targetCol;
+            if(getBoard()[targetRow][i+1].isWhite != getBoard()[targetRow][targetCol].isWhite) left += 1;
+            break;
+          }else if(i+1==COL_RANGE-1 && getBoard()[targetRow][COL_RANGE-1]==null) left = COL_RANGE-1-targetCol;
+        }
+
+        // Rookの何マス上にコマがあるかチェック
+        for(int i=targetRow; i>0; i--){
+          if(getBoard()[i-1][targetCol]!=null){
+            up = targetRow-i;
+            if(getBoard()[i-1][targetCol].isWhite != getBoard()[targetRow][targetCol].isWhite) up += 1;
+            break;
+          } else if(i-1==0 && getBoard()[0][targetCol]==null) up = targetRow;
+        }
+
+        // Rookの何マス下にコマがあるかチェック
+        for(int i=targetRow; i<ROW_RANGE-1; i++){
+          if(getBoard()[i+1][targetCol]!=null){
+            down = i-targetRow;
+            if(getBoard()[i+1][targetCol].isWhite != getBoard()[targetRow][targetCol].isWhite) down += 1;
+            break;
+          }else if(i+1==ROW_RANGE-1 && getBoard()[ROW_RANGE-1][targetCol]==null) down = ROW_RANGE-1-targetRow;
+        }
+      }
+      if(getBoard()[targetRow][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece() instanceof Rook){
+        ((Rook) ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece()).setRight(right);
+        ((Rook) ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece()).setLeft(left);
+        ((Rook) ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece()).setUp(up);
+        ((Rook) ((Pawn) getBoard()[targetRow][targetCol]).getNewPiece()).setDown(down);
+      }else{
+        ((Rook)getBoard()[targetRow][targetCol]).setRight(right);
+        ((Rook)getBoard()[targetRow][targetCol]).setLeft(left);
+        ((Rook)getBoard()[targetRow][targetCol]).setUp(up);
+        ((Rook)getBoard()[targetRow][targetCol]).setDown(down);
+      }
+    }
+  }
+
+  public void setSurroundingStateOfOtherPawn(int currRow, int currCol, int targetRow, int targetCol){
+    // pattern1 コマを動かした先のセルが Pawn の移動範囲に含まれている場合その Pawn の移動可能範囲を設定する
+    if (getBoard()[targetRow][targetCol].isWhite) {
+      // 白のコマを動かした先のセルが、黒のPawnからみて左斜め前にある時
+      if (targetRow+1<ROW_RANGE && targetCol-1 >= 0
+          && getBoard()[targetRow+1][targetCol-1]!=null
+          && getBoard()[targetRow+1][targetCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol-1]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol-1].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol-1]).setLeftFront(true);
+      }
+      // 白のコマを動かした先のセルが、黒のPawnからみて正面にある時
+      if (targetRow+1<ROW_RANGE
+          && getBoard()[targetRow+1][targetCol]!=null
+          && getBoard()[targetRow+1][targetCol] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol]).setFront(true);
+      }
+      // 白のコマを動かした先のセルが、黒のPawnからみて右斜め前にある時
+      if (targetRow+1<ROW_RANGE && targetCol+1<COL_RANGE
+          && getBoard()[targetRow+1][targetCol+1]!=null
+          && getBoard()[targetRow+1][targetCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol+1]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol+1].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol+1]).setRightFront(true);
+      }
+      // 白のコマを動かした先のセルが、白のPawnからみて左斜め前にある時
+      if (targetRow-1>=0 && targetCol+1<COL_RANGE
+          && getBoard()[targetRow-1][targetCol+1]!=null
+          && getBoard()[targetRow-1][targetCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol+1]).isPromoted()
+          && getBoard()[targetRow-1][targetCol+1].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol+1]).setLeftFront(true);
+      }
+      // 白のコマを動かした先のセルが、白のPawnからみて正面にある時
+      if (targetRow-1>=0
+          && getBoard()[targetRow-1][targetCol]!=null
+          && getBoard()[targetRow-1][targetCol] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol]).isPromoted()
+          && getBoard()[targetRow-1][targetCol].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol]).setFront(true);
+      }
+      // 白のコマを動かした先のセルが、白のPawnからみて右斜め前にある時
+      if (targetRow-1>=0
+          && targetCol-1>=0
+          && getBoard()[targetRow-1][targetCol-1]!=null
+          && getBoard()[targetRow-1][targetCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol-1]).isPromoted()
+          && getBoard()[targetRow-1][targetCol-1].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol-1]).setRightFront(true);
+      }
+    } else {
+      // 黒のコマを動かした先のセルが、白のPawnからみて右斜め前にある時
+      if (targetRow-1>=0 && targetCol-1>=0
+          && getBoard()[targetRow-1][targetCol-1]!=null
+          && getBoard()[targetRow-1][targetCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol-1]).isPromoted()
+          && getBoard()[targetRow-1][targetCol-1].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol-1]).setRightFront(true);
+      }
+      // 黒のコマを動かした先のセルが、白のPawnからみて正面にある時
+      if (targetRow-1>=0
+          && getBoard()[targetRow-1][targetCol]!=null
+          && getBoard()[targetRow-1][targetCol] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol]).isPromoted()
+          && getBoard()[targetRow-1][targetCol].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol]).setFront(true);
+      }
+      // 黒のコマを動かした先のセルが、白のPawnからみて左斜め前にある時
+      if (targetRow-1>=0 && targetCol+1<COL_RANGE
+          && getBoard()[targetRow-1][targetCol+1]!=null
+          && getBoard()[targetRow-1][targetCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow-1][targetCol+1]).isPromoted()
+          && getBoard()[targetRow-1][targetCol+1].isWhite) {
+        ((Pawn) getBoard()[targetRow-1][targetCol+1]).setLeftFront(true);
+      }
+
+      // 黒のコマを動かした先のセルが、黒のPawnからみて右斜め前にある時
+      if (targetRow+1<ROW_RANGE && targetCol+1<COL_RANGE
+          && getBoard()[targetRow+1][targetCol+1]!=null
+          && getBoard()[targetRow+1][targetCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol+1]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol+1].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol+1]).setRightFront(true);
+      }
+
+      // 黒のコマを動かした先のセルが、黒のPawnからみて正面にある時
+      if (targetRow+1<ROW_RANGE
+          && getBoard()[targetRow+1][targetCol]!=null
+          && getBoard()[targetRow+1][targetCol] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol]).setFront(true);
+      }
+
+      // 黒のコマを動かした先のセルが、黒のPawnからみて左斜め前にある時
+      if (targetRow+1<ROW_RANGE && targetCol-1>=0
+          && getBoard()[targetRow+1][targetCol-1]!=null
+          && getBoard()[targetRow+1][targetCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[targetRow+1][targetCol-1]).isPromoted()
+          && !getBoard()[targetRow+1][targetCol-1].isWhite) {
+        ((Pawn) getBoard()[targetRow+1][targetCol-1]).setLeftFront(true);
+      }
+    }
+
+    // pattern2 移動前のコマが、Pawnの前3マスに隣接している場合
+    // 移動後に前3マスから外れる場合にはフラグを解除する
+    if (getBoard()[targetRow][targetCol].isWhite) {
+      // 白のPawnから見て左斜め前にある場合
+      if (currRow-1>=0 && currCol+1<COL_RANGE
+          && getBoard()[currRow-1][currCol+1] != null
+          && getBoard()[currRow-1][currCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol+1]).isPromoted()
+          && !getBoard()[currRow-1][currCol+1].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol+1]).setLeftFront(false);
+      }
+      // 白のPawnから見て正面にある場合
+      if (currRow-1>=0
+          && getBoard()[currRow-1][currCol] != null
+          && getBoard()[currRow-1][currCol] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol]).isPromoted()
+          && !getBoard()[currRow-1][currCol].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol]).setFront(false);
+      }
+      // 白のPawnから見て右斜め前にある場合
+      if (currRow-1>=0 && currCol-1>=0
+          && getBoard()[currRow-1][currCol-1] != null
+          && getBoard()[currRow-1][currCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol-1]).isPromoted()
+          && !getBoard()[currRow-1][currCol-1].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol-1]).setRightFront(false);
+      }
+      // 黒のPawnから見て左斜め前にある場合
+      if (currRow+1<ROW_RANGE && currCol-1>=0
+          && getBoard()[currRow+1][currCol-1] != null
+          && getBoard()[currRow+1][currCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol-1]).isPromoted()
+          && !getBoard()[currRow+1][currCol-1].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol-1]).setLeftFront(false);
+      }
+      // 黒のPawnから見て正面にある場合
+      if (currRow+1<ROW_RANGE
+          && getBoard()[currRow+1][currCol] != null
+          && getBoard()[currRow+1][currCol] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol]).isPromoted()
+          && !getBoard()[currRow+1][currCol].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol]).setFront(false);
+      }
+      // 黒のPawnから見て右斜め前にある場合
+      if (currRow+1<ROW_RANGE && currCol+1<COL_RANGE
+          && getBoard()[currRow+1][currCol+1] != null
+          && getBoard()[currRow+1][currCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol+1]).isPromoted()
+          && !getBoard()[currRow+1][currCol+1].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol+1]).setRightFront(false);
+      }
+    }else {
+      // 白のPawnから見て右斜め前にある場合
+      if (currRow-1>=0 && currCol-1>= 0
+          && getBoard()[currRow-1][currCol-1]!=null
+          && getBoard()[currRow-1][currCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol-1]).isPromoted()
+          && getBoard()[currRow-1][currCol-1].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol-1]).setRightFront(false);
+      }
+      // 白のPawnから見て正面にある場合
+      if (currRow-1>= 0
+          && getBoard()[currRow-1][currCol]!=null
+          && getBoard()[currRow-1][currCol] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol]).isPromoted()
+          && getBoard()[currRow-1][currCol].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol]).setFront(false);
+      }
+      // 白のPawnから見て左斜め前にある場合
+      if (currRow-1>= 0 && currCol+1 < COL_RANGE
+          && getBoard()[currRow-1][currCol+1]!=null
+          && getBoard()[currRow-1][currCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow-1][currCol+1]).isPromoted()
+          && getBoard()[currRow-1][currCol+1].isWhite) {
+        ((Pawn) getBoard()[currRow-1][currCol+1]).setLeftFront(false);
+      }
+      // 黒のPawnから見て右斜め前にある場合
+      if (currRow+1<ROW_RANGE
+          && currCol+1<COL_RANGE && getBoard()[currRow+1][currCol+1]!=null
+          && getBoard()[currRow+1][currCol+1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol+1]).isPromoted()
+          && getBoard()[currRow+1][currCol+1].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol+1]).setRightFront(false);
+      }
+      // 黒のPawnから見て正面にある場合
+      if (currRow+1<ROW_RANGE
+          && getBoard()[currRow+1][currCol]!=null
+          && getBoard()[currRow+1][currCol] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol]).isPromoted()
+          && getBoard()[currRow+1][currCol].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol]).setFront(false);
+      }
+      // 黒のPawnから見て左斜め前にある場合
+      if (currRow+1<ROW_RANGE && currCol-1>=0
+          && getBoard()[currRow+1][currCol-1]!=null
+          && getBoard()[currRow+1][currCol-1] instanceof Pawn
+          && !((Pawn) getBoard()[currRow+1][currCol-1]).isPromoted()
+          && getBoard()[currRow+1][currCol-1].isWhite) {
+        ((Pawn) getBoard()[currRow+1][currCol-1]).setLeftFront(false);
+      }
+    }
+  }
+
+  public void setSurroundingStateOfOtherRook(int currRow, int currCol, int targetRow, int targetCol){
+    // pattern2 コマを動かした先のセルが Rook の移動範囲に含まれている場合その Rook の移動可能範囲を設定する
+
+    // コマを動かした先のセルが、黒の Rook の左側経路に含まれる場合
+    int ColOfBlackRookLeftFromTargetPiece= -1;
+    for(int i=targetCol-1; i>=0; i--) {
+      if (getBoard()[targetRow][i]!=null
+          && (getBoard()[targetRow][i] instanceof Rook
+            || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
+          && !getBoard()[targetRow][i].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) ColOfBlackRookLeftFromTargetPiece = i;
+        else ColOfBlackRookLeftFromTargetPiece = i-1;
+        break;
+      }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColOfBlackRookLeftFromTargetPiece != -1) {
+      System.out.println(getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Rook);
+      if(getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece])
+            .setLeft(targetCol-ColOfBlackRookLeftFromTargetPiece);
+      }else if(
+          getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn) getBoard()[targetRow][ColOfBlackRookLeftFromTargetPiece])
+            .getNewPiece())
+            .setLeft(targetCol-ColOfBlackRookLeftFromTargetPiece);
+      }
+    }
+
+    // コマを動かした先のセルが、黒の Rook の右側経路に含まれる場合
+    int ColBlackRookRightFromTargetPiece= -1;
+    for(int i=targetCol+1; i<COL_RANGE; i++){
+      if(getBoard()[targetRow][i]!=null
+          && (getBoard()[targetRow][i] instanceof Rook
+            || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
+          && !getBoard()[targetRow][i].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) ColBlackRookRightFromTargetPiece= i;
+        else ColBlackRookRightFromTargetPiece = i-1;
+        break;
+      }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColBlackRookRightFromTargetPiece != -1) {
+
+      if(getBoard()[targetRow][ColBlackRookRightFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][ColBlackRookRightFromTargetPiece])
+            .setRight(ColBlackRookRightFromTargetPiece-targetCol);
+      }else if(
+          getBoard()[targetRow][ColBlackRookRightFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][ColBlackRookRightFromTargetPiece]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn) getBoard()[targetRow][ColBlackRookRightFromTargetPiece])
+            .getNewPiece())
+            .setRight(ColBlackRookRightFromTargetPiece-targetCol);
+      }
+    }
+
+    // コマを動かした先のセルが、黒の Rook の上側経路に含まれる場合
+    int RowOfBlackRookUpFromTargetPiece= -1;
+    for(int i=targetRow+1; i<ROW_RANGE; i++){
+      if(getBoard()[i][targetCol]!=null
+          && (getBoard()[i][targetCol] instanceof Rook
+            || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
+          && !getBoard()[i][targetCol].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) {
+          RowOfBlackRookUpFromTargetPiece= i;
+        }
+        else RowOfBlackRookUpFromTargetPiece = i-1;
+        break;
+      }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
+        break;
+      }
+    }
+
+    if(RowOfBlackRookUpFromTargetPiece != -1) {
+      System.out.println(RowOfBlackRookUpFromTargetPiece-targetRow);
+      System.out.println(getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol]);
+      if (getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol] instanceof Rook) {
+
+        ((Rook)getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol])
+            .setUp(RowOfBlackRookUpFromTargetPiece-targetRow);
+
+      }else if(
+          getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn) getBoard()[RowOfBlackRookUpFromTargetPiece][targetCol])
+            .getNewPiece())
+            .setUp(RowOfBlackRookUpFromTargetPiece-targetRow);
+      }
+    }
+
+    // コマを動かした先のセルが、黒の Rook の下側経路に含まれる場合
+    int RowOfBlackRookDownFromTargetPiece= -1;
+    for(int i=targetRow-1; i>=0; i--){
+      if(getBoard()[i][targetCol]!=null
+          && (getBoard()[i][targetCol] instanceof Rook
+              || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
+          && !getBoard()[i][targetCol].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) RowOfBlackRookDownFromTargetPiece= i-1;
+        else RowOfBlackRookDownFromTargetPiece = i;
+        break;
+      }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
+        break;
+      }
+    }
+    if(RowOfBlackRookDownFromTargetPiece != -1) {
+      if(getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol] instanceof Rook){
+        ((Rook)getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol])
+            .setDown(targetRow-RowOfBlackRookDownFromTargetPiece);
+      }else if(
+          getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn) getBoard()[RowOfBlackRookDownFromTargetPiece][targetCol])
+            .getNewPiece())
+            .setDown(targetRow-RowOfBlackRookDownFromTargetPiece);
+      }
+    }
+
+    // コマを動かした先のセルが、白の Rook の右側経路に含まれる場合
+    int ColOfWhiteRookLeftFromTargetPiece= -1;
+    for(int i=targetCol-1; i>=0; i--){
+      if(getBoard()[targetRow][i]!=null
+          && (getBoard()[targetRow][i] instanceof Rook
+            || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
+          && getBoard()[targetRow][i].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) ColOfWhiteRookLeftFromTargetPiece= i;
+        else ColOfWhiteRookLeftFromTargetPiece = i-1;
+        break;
+      }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColOfWhiteRookLeftFromTargetPiece != -1) {
+      if(getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece])
+            .setRight(targetCol-ColOfWhiteRookLeftFromTargetPiece-1);
+      }else if(
+          getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn)getBoard()[targetRow][ColOfWhiteRookLeftFromTargetPiece])
+            .getNewPiece())
+            .setRight(targetCol-ColOfWhiteRookLeftFromTargetPiece);
+      }
+    }
+
+    // コマを動かした先のセルが、白の Rook の左側経路に含まれる場合
+    int ColOfWhiteRookRightFromTargetPiece= -1;
+    for(int i=targetCol+1; i<COL_RANGE; i++){
+      if(getBoard()[targetRow][i]!=null
+          && (getBoard()[targetRow][i] instanceof Rook
+            || (getBoard()[targetRow][i] instanceof Pawn && ((Pawn) getBoard()[targetRow][i]).getNewPiece() instanceof Rook))
+          && getBoard()[targetRow][i].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) ColOfWhiteRookRightFromTargetPiece= i-1;
+        else ColOfWhiteRookRightFromTargetPiece = i;
+        break;
+      }else if(getBoard()[targetRow][i]!=null && !(getBoard()[targetRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColOfWhiteRookRightFromTargetPiece != -1) {
+      if(getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece] instanceof Rook){
+        ((Rook)getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece])
+            .setLeft(ColOfWhiteRookRightFromTargetPiece-targetCol-1);
+      }else if(
+          getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece] instanceof Pawn
+          && ((Pawn) getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn)getBoard()[targetRow][ColOfWhiteRookRightFromTargetPiece])
+            .getNewPiece())
+            .setLeft(ColOfWhiteRookRightFromTargetPiece-targetCol);
+      }
+    }
+
+    // コマを動かした先のセルが、白の Rook の上側経路に含まれる場合
+    int RowOfWhiteRookDownFromTargetPiece= -1;
+    for(int i=targetRow-1; i>=0; i--){
+      if(getBoard()[i][targetCol]!=null
+          && (getBoard()[i][targetCol] instanceof Rook
+            || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
+          && getBoard()[i][targetCol].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) RowOfWhiteRookDownFromTargetPiece= i;
+        else RowOfWhiteRookDownFromTargetPiece = i-1;
+        break;
+      }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
+        break;
+      }
+    }
+    if(RowOfWhiteRookDownFromTargetPiece != -1) {
+      if(getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Rook){
+        ((Rook)getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol])
+            .setUp(targetRow-RowOfWhiteRookDownFromTargetPiece);
+      }else if(
+          getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[RowOfWhiteRookDownFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+      ){
+        ((Rook)((Pawn)getBoard()[targetRow][RowOfWhiteRookDownFromTargetPiece])
+            .getNewPiece())
+            .setUp(targetRow-RowOfWhiteRookDownFromTargetPiece);
+      }
+    }
+
+    // コマを動かした先のセルが、白の Rook の下側経路に含まれる場合
+    int RowOfWhiteRookUpFromTargetPiece= -1;
+    for(int i=targetRow+1; i<ROW_RANGE; i++){
+      if(getBoard()[i][targetCol]!=null
+          && (getBoard()[i][targetCol] instanceof Rook
+            || (getBoard()[i][targetCol] instanceof Pawn && ((Pawn) getBoard()[i][targetCol]).getNewPiece() instanceof Rook))
+          && getBoard()[i][targetCol].isWhite
+      ){
+        if(getBoard()[targetRow][targetCol].isWhite) RowOfWhiteRookUpFromTargetPiece= i-1;
+        else RowOfWhiteRookUpFromTargetPiece = i;
+        break;
+      }else if(getBoard()[i][targetCol]!=null && !(getBoard()[i][targetCol] instanceof Rook)){
+        break;
+      }
+    }
+    if(RowOfWhiteRookUpFromTargetPiece != -1) {
+      if(getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Rook){
+        ((Rook)getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol])
+            .setDown(RowOfWhiteRookUpFromTargetPiece-targetRow);
+      }else if(
+          getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol] instanceof Pawn
+          && ((Pawn) getBoard()[RowOfWhiteRookUpFromTargetPiece][targetCol]).getNewPiece() instanceof Rook
+      ) {
+        ((Rook)((Pawn) getBoard()[targetRow][RowOfWhiteRookUpFromTargetPiece])
+            .getNewPiece())
+            .setDown(RowOfWhiteRookUpFromTargetPiece - targetRow);
+      }
+    }
+
+
+    // pattern3 移動前のコマが、Rookの前後左右移動範囲に位置している場合
+    // 移動後にRookの移動範囲から外れる場合には移動可能範囲を再設定する
+
+    // 白のRookから見て上側 or 黒のルークから見て下側の経路にある場合
+    int RowOfRookWhiteDownOrBlackUpFromCurrentCell= -1;
+    for(int i=currRow-1; i>=0; i--) {
+      if (getBoard()[i][currCol]!=null
+          &&(getBoard()[i][currCol] instanceof Rook
+            || (getBoard()[i][currCol] instanceof Pawn && ((Pawn) getBoard()[i][currCol]).getNewPiece() instanceof Rook))
+      ) {
+        RowOfRookWhiteDownOrBlackUpFromCurrentCell = i;
+        break;
+      }else if(getBoard()[i][currCol]!=null && !(getBoard()[i][currCol] instanceof Rook)){
+        break;
+      }
+    }
+    if(RowOfRookWhiteDownOrBlackUpFromCurrentCell != -1) {
+      // 見つかった Rook の上側経路から左右にズレるとき
+      if(targetCol!=currCol){
+        // 見つかった Rook の rowから上を探す
+        // Rookが移動可能な最初のマスのrowを求める
+        // 求めたrowとRookのrowとの差を求める
+        int updatedRowOfWhiteUpOrBlackDownForRook = -1;
+        for(int i=RowOfRookWhiteDownOrBlackUpFromCurrentCell+1; i<ROW_RANGE; i++){
+          if(getBoard()[i][currCol]!=null){
+            if(getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol].isWhite!=getBoard()[i][currCol].isWhite){
+              updatedRowOfWhiteUpOrBlackDownForRook = i;
+            }
+            else updatedRowOfWhiteUpOrBlackDownForRook = i-1;
+          }
+        }
+
+        if(updatedRowOfWhiteUpOrBlackDownForRook==-1){
+          updatedRowOfWhiteUpOrBlackDownForRook = ROW_RANGE-1;
+        }
+
+        if(getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol].isWhite){
+          if(getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol] instanceof Rook){
+            ((Rook)getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol])
+                .setUp(updatedRowOfWhiteUpOrBlackDownForRook-RowOfRookWhiteDownOrBlackUpFromCurrentCell);
+          }else{
+            ((Rook)((Pawn) getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol])
+                .getNewPiece())
+                .setUp(updatedRowOfWhiteUpOrBlackDownForRook-RowOfRookWhiteDownOrBlackUpFromCurrentCell);
+          }
         }else{
-          // Rookの右何マス先にコマがあるかチェック
-          for(int i=targetCol; i>0; i--){
-            if((getBoard()[targetRow][i-1]!=null
-                && (getBoard()[targetRow][i-1] instanceof Pawn
-                && !getBoard()[targetRow][i-1].getPosition().isEp()))
-              ||getBoard()[targetRow][i-1]!=null
-            ){
-              right = targetCol-i;
-              if(getBoard()[targetRow][i-1].isWhite != updatedCell.isWhite) right += 1;
-              break;
-            }else if(i-1==0 &&  getBoard()[targetRow][0]==null) right = targetCol;
+          if(getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol] instanceof Rook){
+            ((Rook)getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol])
+                .setDown(updatedRowOfWhiteUpOrBlackDownForRook-RowOfRookWhiteDownOrBlackUpFromCurrentCell);
+          }else{
+            ((Rook)((Pawn) getBoard()[RowOfRookWhiteDownOrBlackUpFromCurrentCell][currCol])
+                .getNewPiece())
+                .setDown(updatedRowOfWhiteUpOrBlackDownForRook-RowOfRookWhiteDownOrBlackUpFromCurrentCell);
           }
-
-          // Rookの左何マス先にコマがあるかチェック
-          for(int i=targetCol; i<COL_RANGE-1; i++){
-            if((getBoard()[targetRow][i+1]!=null
-                && (getBoard()[targetRow][i+1] instanceof Pawn
-                && !getBoard()[targetRow][i+1].getPosition().isEp()))
-              ||getBoard()[targetRow][i+1]!=null
-            ){
-              left = i-targetCol;
-              if(getBoard()[targetRow][i+1].isWhite != updatedCell.isWhite) left += 1;
-              break;
-            }else if(i+1==COL_RANGE-1 && getBoard()[targetRow][COL_RANGE-1]==null) left = COL_RANGE-1-targetCol;
-          }
-
-          // Rookの何マス上にコマがあるかチェック
-          for(int i=targetRow; i>0; i--){
-            if((getBoard()[i-1][targetCol]!=null
-                && (getBoard()[i-1][targetCol] instanceof Pawn
-                && !getBoard()[i-1][targetCol].getPosition().isEp()))
-              ||getBoard()[i-1][targetCol]!=null
-            ){
-              up = targetRow-i;
-              if(getBoard()[i-1][targetCol].isWhite != updatedCell.isWhite) up += 1;
-              break;
-            } else if(i-1==0 && getBoard()[0][targetCol]==null) up = targetRow;
-          }
-
-          // Rookの何マス下にコマがあるかチェック
-          for(int i=targetRow; i<ROW_RANGE-1; i++){
-            if((getBoard()[i+1][targetCol]!=null
-                && (getBoard()[i+1][targetCol] instanceof Pawn
-                && !getBoard()[i+1][targetCol].getPosition().isEp()))
-              ||getBoard()[i+1][targetCol]!=null
-            ){
-              down = i-targetRow;
-              if(getBoard()[i+1][targetCol].isWhite != updatedCell.isWhite) down += 1;
-              break;
-            }else if(i+1==ROW_RANGE-1 && getBoard()[ROW_RANGE-1][targetCol]==null) down = ROW_RANGE-1-targetRow;
-          }
-        }
-        ((Rook)updatedCell).setRight(right);
-        ((Rook)updatedCell).setLeft(left);
-        ((Rook)updatedCell).setUp(up);
-        ((Rook)updatedCell).setDown(down);
-      }
-
-      // コマを動かした先のセルが Pawn の移動範囲に含まれている場合その Pawn の移動可能範囲を設定する
-      if (updatedCell.isWhite) {
-        // 白のコマを動かした先のセルが、黒のPawnからみて左斜め前にある時
-        if (targetRow+1<ROW_RANGE
-            && targetCol-1 >= 0
-            && getBoard()[targetRow+1][targetCol-1]!=null
-            && getBoard()[targetRow+1][targetCol-1] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol-1].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol-1]).setLeftFront(true);
-        }
-        // 白のコマを動かした先のセルが、黒のPawnからみて正面にある時
-        if (targetRow+1<ROW_RANGE
-            && getBoard()[targetRow+1][targetCol]!=null
-            && getBoard()[targetRow+1][targetCol] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol]).setFront(true);
-        }
-        // 白のコマを動かした先のセルが、黒のPawnからみて右斜め前にある時
-        if (targetRow+1<ROW_RANGE
-            && targetCol+1<COL_RANGE
-            && getBoard()[targetRow+1][targetCol+1]!=null
-            && getBoard()[targetRow+1][targetCol+1] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol+1].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol+1]).setRightFront(true);
-        }
-
-        // 白のコマを動かした先のセルが、白のPawnからみて左斜め前にある時
-        if (targetRow-1>=0 && targetCol+1<COL_RANGE && getBoard()[targetRow-1][targetCol+1]!=null && getBoard()[targetRow-1][targetCol+1] instanceof Pawn && getBoard()[targetRow-1][targetCol+1].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol+1]).setLeftFront(true);
-        }
-        // 白のコマを動かした先のセルが、白のPawnからみて正面にある時
-        if (targetRow-1>=0 && getBoard()[targetRow-1][targetCol]!=null && getBoard()[targetRow-1][targetCol] instanceof Pawn && getBoard()[targetRow-1][targetCol].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol]).setFront(true);
-        }
-        // 白のコマを動かした先のセルが、白のPawnからみて右斜め前にある時
-        if (targetRow-1>=0 && targetCol-1>=0 && getBoard()[targetRow-1][targetCol-1]!=null && getBoard()[targetRow-1][targetCol-1] instanceof Pawn && getBoard()[targetRow-1][targetCol-1].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol-1]).setRightFront(true);
-        }
-      } else {
-        // 黒のコマを動かした先のセルが、白のPawnからみて右斜め前にある時
-        if (targetRow-1>=0
-            && targetCol-1>=0
-            && getBoard()[targetRow-1][targetCol-1]!=null
-            && getBoard()[targetRow-1][targetCol-1] instanceof Pawn
-            && getBoard()[targetRow-1][targetCol-1].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol-1]).setRightFront(true);
-        }
-        // 黒のコマを動かした先のセルが、白のPawnからみて正面にある時
-        if (targetRow-1>=0
-            && getBoard()[targetRow-1][targetCol]!=null
-            && getBoard()[targetRow-1][targetCol] instanceof Pawn
-            && getBoard()[targetRow-1][targetCol].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol]).setFront(true);
-        }
-        // 黒のコマを動かした先のセルが、白のPawnからみて左斜め前にある時
-        if (targetRow-1>=0
-            && targetCol+1<COL_RANGE
-            && getBoard()[targetRow-1][targetCol+1]!=null
-            && getBoard()[targetRow-1][targetCol+1] instanceof Pawn
-            && getBoard()[targetRow-1][targetCol+1].isWhite) {
-          ((Pawn) getBoard()[targetRow-1][targetCol+1]).setLeftFront(true);
-        }
-
-        // 黒のコマを動かした先のセルが、黒のPawnからみて右斜め前にある時
-        if (targetRow+1<ROW_RANGE
-            && targetCol+1<COL_RANGE
-            && getBoard()[targetRow+1][targetCol+1]!=null
-            && getBoard()[targetRow+1][targetCol+1] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol+1].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol+1]).setRightFront(true);
-        }
-
-        // 黒のコマを動かした先のセルが、黒のPawnからみて正面にある時
-        if (targetRow+1<ROW_RANGE
-            && getBoard()[targetRow+1][targetCol]!=null
-            && getBoard()[targetRow+1][targetCol] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol]).setFront(true);
-        }
-
-        // 黒のコマを動かした先のセルが、黒のPawnからみて左斜め前にある時
-        if (targetRow+1<ROW_RANGE
-            && targetCol-1>=0
-            && getBoard()[targetRow+1][targetCol-1]!=null
-            && getBoard()[targetRow+1][targetCol-1] instanceof Pawn
-            && !getBoard()[targetRow+1][targetCol-1].isWhite) {
-          ((Pawn) getBoard()[targetRow+1][targetCol-1]).setLeftFront(true);
         }
       }
+    }
 
-      // コマを動かした先のセルが Rook の移動範囲に含まれている場合その Rook の移動可能範囲を設定する
-      if (updatedCell.isWhite) {
-        // 白のコマを動かした先のセルが、黒の Rook の左側経路に含まれる場合
-        int PositionOfBlackRookLeftFromWhitePiece= -1;
-        for(int i=targetCol-1; i>=0; i--) {
-          if (getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && !getBoard()[targetRow][i].isWhite) {
-            PositionOfBlackRookLeftFromWhitePiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-            && !(getBoard()[targetRow][i] instanceof Rook)
-            && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookLeftFromWhitePiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfBlackRookLeftFromWhitePiece])
-              .setLeft(targetCol-PositionOfBlackRookLeftFromWhitePiece);
-        }
-
-        // 白のコマを動かした先のセルが、黒の Rook の右側経路に含まれる場合
-        int PositionOfBlackRookRightFromWhitePiece= -1;
-        for(int i=targetCol+1; i<COL_RANGE; i++){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && !getBoard()[targetRow][i].isWhite){
-            PositionOfBlackRookRightFromWhitePiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-            && !(getBoard()[targetRow][i] instanceof Rook)
-            && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookRightFromWhitePiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfBlackRookRightFromWhitePiece])
-              .setRight(PositionOfBlackRookRightFromWhitePiece-targetCol);
-        }
-
-        // 白のコマを動かした先のセルが、黒の Rook の上側経路に含まれる場合
-        int PositionOfBlackRookDownFromWhitePiece= -1;
-        for(int i=targetRow+1; i<ROW_RANGE; i++){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && !getBoard()[i][targetCol].isWhite){
-            PositionOfBlackRookDownFromWhitePiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-            && !(getBoard()[i][targetCol] instanceof Rook)
-            && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookDownFromWhitePiece != -1) {
-          ((Rook)getBoard()[PositionOfBlackRookDownFromWhitePiece][targetCol])
-              .setUp(targetRow-PositionOfBlackRookDownFromWhitePiece);
-        }
-
-        // 白のコマを動かした先のセルが、黒の Rook の下側経路に含まれる場合
-        int PositionOfBlackRookUpFromWhitePiece= -1;
-        for(int i=targetRow-1; i>=0; i--){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && !getBoard()[i][targetCol].isWhite){
-            PositionOfBlackRookUpFromWhitePiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-            && !(getBoard()[i][targetCol] instanceof Rook)
-            && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookUpFromWhitePiece != -1) {
-          ((Rook)getBoard()[PositionOfBlackRookUpFromWhitePiece][targetCol])
-              .setDown(PositionOfBlackRookUpFromWhitePiece-targetRow);
-        }
-
-//        // 白のコマを動かした先のセルが、白の Rook の右側経路に含まれる場合
-        int PositionOfWhiteRookLeftFromWhitePiece= -1;
-        for(int i=targetCol-1; i>=0; i--){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && getBoard()[targetRow][i].isWhite){
-            PositionOfWhiteRookLeftFromWhitePiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-            && !(getBoard()[targetRow][i] instanceof Rook)
-            && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookLeftFromWhitePiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfWhiteRookLeftFromWhitePiece])
-              .setRight(targetCol-PositionOfWhiteRookLeftFromWhitePiece-1);
-        }
-
-        // 白のコマを動かした先のセルが、白の Rook の左側経路に含まれる場合
-        int PositionOfWhiteRookRightFromWhitePiece= -1;
-        for(int i=targetCol+1; i<COL_RANGE; i++){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && getBoard()[targetRow][i].isWhite){
-            PositionOfWhiteRookRightFromWhitePiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-              && !(getBoard()[targetRow][i] instanceof Rook)
-              && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookRightFromWhitePiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfWhiteRookRightFromWhitePiece])
-              .setLeft(PositionOfWhiteRookRightFromWhitePiece-targetCol-1);
-        }
-
-        // 白のコマを動かした先のセルが、白の Rook の上側経路に含まれる場合
-        int PositionOfWhiteRookDownFromWhitePiece= -1;
-        for(int i=targetRow-1; i>=0; i--){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && getBoard()[i][targetCol].isWhite){
-            PositionOfWhiteRookDownFromWhitePiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookDownFromWhitePiece != -1) {
-          ((Rook)getBoard()[PositionOfWhiteRookDownFromWhitePiece][targetCol])
-              .setUp(targetRow-PositionOfWhiteRookDownFromWhitePiece-1);
-        }
-
-        // 白のコマを動かした先のセルが、白の Rook の下側経路に含まれる場合
-        int PositionOfWhiteRookUpFromWhitePiece= -1;
-        for(int i=targetRow+1; i<ROW_RANGE; i++){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && getBoard()[i][targetCol].isWhite){
-            PositionOfWhiteRookUpFromWhitePiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookUpFromWhitePiece != -1) {
-          ((Rook)getBoard()[PositionOfWhiteRookUpFromWhitePiece][targetCol])
-              .setDown(PositionOfWhiteRookUpFromWhitePiece-targetRow-1);
-        }
-
-      } else {
-        // 黒のコマを動かした先のセルが、黒の Rook の右側経路に含まれる場合
-        int PositionOfBlackRookLeftFromBlackPiece= -1;
-        for(int i=targetCol+1; i<COL_RANGE; i++){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && !getBoard()[targetRow][i].isWhite){
-            PositionOfBlackRookLeftFromBlackPiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-              && !(getBoard()[targetRow][i] instanceof Rook)
-              && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookLeftFromBlackPiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfBlackRookLeftFromBlackPiece])
-              .setRight(PositionOfBlackRookLeftFromBlackPiece-targetCol-1);
-        }
-
-        // 黒のコマを動かした先のセルが、黒の Rook の左側経路に含まれる場合
-        int PositionOfBlackRookRightFromBlackPiece= -1;
-        for(int i=targetCol-1; i>=0; i--){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && !getBoard()[targetRow][i].isWhite){
-            PositionOfBlackRookRightFromBlackPiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-              && !(getBoard()[targetRow][i] instanceof Rook)
-              && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookRightFromBlackPiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfBlackRookRightFromBlackPiece])
-              .setLeft(targetCol-PositionOfBlackRookRightFromBlackPiece-1);
-        }
-
-        // 黒のコマを動かした先のセルが、黒の Rook の上側経路に含まれる場合
-        int PositionOfBlackRookDownFromBlackPiece= -1;
-        for(int i=targetRow+1; i<ROW_RANGE; i++){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && !getBoard()[i][targetCol].isWhite){
-            PositionOfBlackRookDownFromBlackPiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookDownFromBlackPiece != -1){
-          ((Rook)getBoard()[PositionOfBlackRookDownFromBlackPiece][targetCol])
-              .setUp(PositionOfBlackRookDownFromBlackPiece-targetRow-1);
-        }
-
-        // 黒のコマを動かした先のセルが、黒の Rook の下側経路に含まれる場合
-        int PositionOfBlackRookUpFromBlackPiece= -1;
-        for(int i=targetRow-1; i>=0; i--){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && !getBoard()[i][targetCol].isWhite){
-            PositionOfBlackRookUpFromBlackPiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfBlackRookUpFromBlackPiece != -1) {
-          ((Rook)getBoard()[PositionOfBlackRookUpFromBlackPiece][targetCol])
-              .setDown(targetRow-PositionOfBlackRookUpFromBlackPiece-1);
-        }
-
-        // 黒のコマを動かした先のセルが、白の Rook の右側経路に含まれる場合
-        int PositionOfWhiteRookLeftFromBlackPiece= -1;
-        for(int i=targetCol-1; i>=0; i--){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && getBoard()[targetRow][i].isWhite){
-            PositionOfWhiteRookLeftFromBlackPiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-              && !(getBoard()[targetRow][i] instanceof Rook)
-              && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookLeftFromBlackPiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfWhiteRookLeftFromBlackPiece])
-              .setRight(targetCol-PositionOfWhiteRookLeftFromBlackPiece);
-        }
-
-        // 黒のコマを動かした先のセルが、白の Rook の左側経路に含まれる場合
-        int PositionOfWhiteRookRightFromBlackPiece= -1;
-        for(int i=targetCol+1; i<COL_RANGE; i++){
-          if(getBoard()[targetRow][i]!=null
-              && getBoard()[targetRow][i] instanceof Rook
-              && getBoard()[targetRow][i].isWhite){
-            PositionOfWhiteRookRightFromBlackPiece = i;
-            break;
-          }else if(getBoard()[targetRow][i]!=null
-              && !(getBoard()[targetRow][i] instanceof Rook)
-              && !(getBoard()[targetRow][i] instanceof Pawn && getBoard()[targetRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookRightFromBlackPiece != -1) {
-          ((Rook)getBoard()[targetRow][PositionOfWhiteRookRightFromBlackPiece])
-              .setLeft(PositionOfWhiteRookRightFromBlackPiece-targetCol);
-        }
-
-        // 黒のコマを動かした先のセルが、白の Rook の上側経路に含まれる場合
-        int PositionOfWhiteRookUpFromBlackPiece= -1;
-        for(int i=targetRow-1; i>=0; i--){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && getBoard()[i][targetCol].isWhite){
-            PositionOfWhiteRookUpFromBlackPiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookUpFromBlackPiece != -1) {
-          ((Rook)getBoard()[PositionOfWhiteRookUpFromBlackPiece][targetCol])
-              .setUp(targetRow-PositionOfWhiteRookUpFromBlackPiece);
-        }
-
-        // 黒のコマを動かした先のセルが、白の Rook の下側経路に含まれる場合
-        int PositionOfWhiteRookDownFromBlackPiece= -1;
-        for(int i=targetRow+1; i<ROW_RANGE; i++){
-          if(getBoard()[i][targetCol]!=null
-              && getBoard()[i][targetCol] instanceof Rook
-              && getBoard()[i][targetCol].isWhite){
-            PositionOfWhiteRookDownFromBlackPiece = i;
-            break;
-          }else if(getBoard()[i][targetCol]!=null
-              && !(getBoard()[i][targetCol] instanceof Rook)
-              && !(getBoard()[i][targetCol] instanceof Pawn
-              && getBoard()[i][targetCol].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookDownFromBlackPiece != -1) {
-          ((Rook)getBoard()[PositionOfWhiteRookDownFromBlackPiece][targetCol])
-              .setDown(PositionOfWhiteRookDownFromBlackPiece-targetRow);
-        }
+    // 白のRookから見て下側 or 黒のRookから見て上側経路にある場合
+    int RowOfRookWhiteUpOrBlackDownFromCurrentCell= -1;
+    for(int i=currRow+1; i<ROW_RANGE; i++) {
+      if (getBoard()[i][currCol]!=null
+          &&(getBoard()[i][currCol] instanceof Rook
+          || (getBoard()[i][currCol] instanceof Pawn && ((Pawn) getBoard()[i][currCol]).getNewPiece() instanceof Rook))
+      ) {
+        RowOfRookWhiteUpOrBlackDownFromCurrentCell = i;
+        break;
+      }else if(getBoard()[i][currCol]!=null && !(getBoard()[i][currCol] instanceof Rook)){
+        break;
       }
-
-
-//       移動前のコマが、Pawnの前3マスに隣接している場合
-//       移動後に前3マスから外れる場合にはフラグを解除する
-      if (currentCell.isWhite) {
-        // 白のPawnから見て左斜め前にある場合
-        if (currRow-1>=0
-            && currCol+1<COL_RANGE
-            && getBoard()[currRow-1][currCol+1] != null
-            && getBoard()[currRow-1][currCol+1] instanceof Pawn
-            && !getBoard()[currRow-1][currCol+1].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol+1]).setLeftFront(false);
-        }
-        // 白のPawnから見て正面にある場合
-        if (currRow-1>=0
-            && getBoard()[currRow-1][currCol] != null
-            && getBoard()[currRow-1][currCol] instanceof Pawn
-            && !getBoard()[currRow-1][currCol].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol]).setFront(false);
-        }
-        // 白のPawnから見て右斜め前にある場合
-        if (currRow-1>=0
-            && currCol-1>=0
-            && getBoard()[currRow-1][currCol-1] != null
-            && getBoard()[currRow-1][currCol-1] instanceof Pawn
-            && !getBoard()[currRow-1][currCol-1].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol-1]).setRightFront(false);
-        }
-        // 黒のPawnから見て左斜め前にある場合
-        if (currRow+1<ROW_RANGE
-            && currCol-1>=0
-            && getBoard()[currRow+1][currCol-1] != null
-            && getBoard()[currRow+1][currCol-1] instanceof Pawn
-            && !getBoard()[currRow+1][currCol-1].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol-1]).setLeftFront(false);
-        }
-        // 黒のPawnから見て正面にある場合
-        if (currRow+1<ROW_RANGE
-            && getBoard()[currRow+1][currCol] != null
-            && getBoard()[currRow+1][currCol] instanceof Pawn
-            && !getBoard()[currRow+1][currCol].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol]).setFront(false);
-        }
-        // 黒のPawnから見て右斜め前にある場合
-        if (currRow+1<ROW_RANGE
-            && currCol+1<COL_RANGE
-            && getBoard()[currRow+1][currCol+1] != null
-            && getBoard()[currRow+1][currCol+1] instanceof Pawn
-            && !getBoard()[currRow+1][currCol+1].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol+1]).setRightFront(false);
-        }
-      }else {
-        // 白のPawnから見て右斜め前にある場合
-        if (currRow-1>=0
-            && currCol-1>= 0
-            && getBoard()[currRow-1][currCol-1]!=null
-            && getBoard()[currRow-1][currCol-1] instanceof Pawn
-            && getBoard()[currRow-1][currCol-1].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol-1]).setRightFront(false);
-        }
-        // 白のPawnから見て正面にある場合
-        if (currRow-1>= 0
-            && getBoard()[currRow-1][currCol]!=null
-            && getBoard()[currRow-1][currCol] instanceof Pawn
-            && getBoard()[currRow-1][currCol].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol]).setFront(false);
-        }
-        // 白のPawnから見て左斜め前にある場合
-        if (currRow-1>= 0
-            && currCol+1 < COL_RANGE
-            && getBoard()[currRow-1][currCol+1]!=null
-            && getBoard()[currRow-1][currCol+1] instanceof Pawn
-            && getBoard()[currRow-1][currCol+1].isWhite) {
-          ((Pawn) getBoard()[currRow-1][currCol+1]).setLeftFront(false);
-        }
-        // 黒のPawnから見て右斜め前にある場合
-        if (currRow+1<ROW_RANGE
-            && currCol+1<COL_RANGE
-            && getBoard()[currRow+1][currCol+1]!=null
-            && getBoard()[currRow+1][currCol+1] instanceof Pawn
-            && getBoard()[currRow+1][currCol+1].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol+1]).setRightFront(false);
-        }
-        // 黒のPawnから見て正面にある場合
-        if (currRow+1<ROW_RANGE
-            && getBoard()[currRow+1][currCol]!=null
-            && getBoard()[currRow+1][currCol] instanceof Pawn
-            && getBoard()[currRow+1][currCol].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol]).setFront(false);
-        }
-        // 黒のPawnから見て左斜め前にある場合
-        if (currRow+1<ROW_RANGE
-            && currCol-1>=0
-            && getBoard()[currRow+1][currCol-1]!=null
-            && getBoard()[currRow+1][currCol-1] instanceof Pawn
-            && getBoard()[currRow+1][currCol-1].isWhite) {
-          ((Pawn) getBoard()[currRow+1][currCol-1]).setLeftFront(false);
-        }
-      }
-
-//       移動前のコマが、Rookの前後左右移動範囲に位置している場合
-//       移動後にRookの移動範囲から外れる場合には移動可能範囲を再設定する
-      if (currentCell.isWhite) {
-        // 白のRookから見て右側経路にある場合
-        int PositionOfWhiteRookLeftFromWhitePiece= -1;
-        for(int i=currCol-1; i>=0; i--) {
-          if (getBoard()[currRow][i]!=null
-              && getBoard()[currRow][i] instanceof Rook
-              && getBoard()[currRow][i].isWhite) {
-            PositionOfWhiteRookLeftFromWhitePiece = i;
-            break;
-          }else if(getBoard()[currRow][i]!=null
-              && !(getBoard()[currRow][i] instanceof Rook)
-              && !(getBoard()[currRow][i] instanceof Pawn && getBoard()[currRow][i].getPosition().isEp())
-          ){
-            break;
-          }
-        }
-        if(PositionOfWhiteRookLeftFromWhitePiece != -1) {
-          // 右側の経路から上下にズレるとき
-          if(targetRow!=currRow){
-            // currColから右進んでいく
-            // Rookが移動可能な最初のマスのcolを求める
-            // 求めたcolと白Rookのcolとの差を求める
-            int updatedRightEnd = -1;
-            for(int i=currCol; i<COL_RANGE; i++){
-              if(getBoard()[currRow][i]!=null
-                  && !(getBoard()[currRow][i] instanceof Pawn
-                      && getBoard()[currRow][i].getPosition().isEp())){
-                if(getBoard()[currRow][i].isWhite) updatedRightEnd = i-1;
-                else updatedRightEnd = i;
-              }
+    }
+    if(RowOfRookWhiteUpOrBlackDownFromCurrentCell != -1) {
+      // 見つかった Rook の下側経路から左右にズレるとき
+      if(targetCol!=currCol){
+        // 見つかったRookのrowから下を探す
+        // Rookが移動可能な最初のマスのrowを求める
+        // Rookと求めたrowとの差を求める
+        int updatedRowOfWhiteDownOrBlackUpForRook = -1;
+        for(int i=RowOfRookWhiteUpOrBlackDownFromCurrentCell-1; i>=0; i--){
+          if(getBoard()[i][currCol]!=null){
+            if(getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol].isWhite!=getBoard()[i][currCol].isWhite){
+              updatedRowOfWhiteDownOrBlackUpForRook = i-1;
             }
-            if(updatedRightEnd==-1) updatedRightEnd = COL_RANGE-1;
-            if(getBoard()[currRow][PositionOfWhiteRookLeftFromWhitePiece] instanceof Rook){
-              ((Rook)getBoard()[currRow][PositionOfWhiteRookLeftFromWhitePiece])
-                  .setRight(updatedRightEnd-PositionOfWhiteRookLeftFromWhitePiece);
-            }
+            else updatedRowOfWhiteDownOrBlackUpForRook = i;
+          }
+        }
+        if(updatedRowOfWhiteDownOrBlackUpForRook==-1) {
+          updatedRowOfWhiteDownOrBlackUpForRook = 0;
+        }
+
+        if(getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol].isWhite){
+          if(getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol] instanceof Rook){
+            ((Rook)getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol])
+                .setDown(RowOfRookWhiteUpOrBlackDownFromCurrentCell-updatedRowOfWhiteDownOrBlackUpForRook);
+          }else{
+            ((Rook)((Pawn) getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol])
+                .getNewPiece())
+                .setDown(RowOfRookWhiteUpOrBlackDownFromCurrentCell-updatedRowOfWhiteDownOrBlackUpForRook);
+          }
+        }else{
+          if(getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol] instanceof Rook){
+            ((Rook)getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol])
+                .setUp(RowOfRookWhiteUpOrBlackDownFromCurrentCell-updatedRowOfWhiteDownOrBlackUpForRook);
+          }else{
+            ((Rook)((Pawn) getBoard()[RowOfRookWhiteUpOrBlackDownFromCurrentCell][currCol])
+                .getNewPiece())
+                .setDown(RowOfRookWhiteUpOrBlackDownFromCurrentCell-updatedRowOfWhiteDownOrBlackUpForRook);
           }
         }
       }
+    }
 
-      // Pawn のプロモーションを行う
-      if(targetRow==ROW_RANGE-1 && updatedCell instanceof Pawn){
+    // 白のRookから見て右側 or 黒のルークから見て左側経路にある場合
+    int ColOfRookWhiteLeftOrBlackRightFromCurrentCell= -1;
+    for(int i=currCol-1; i>=0; i--) {
+      if (getBoard()[currRow][i]!=null
+          && getBoard()[currRow][i] instanceof Rook
+          || (getBoard()[currRow][i] instanceof Pawn && ((Pawn) getBoard()[currRow][i]).getNewPiece() instanceof Rook)
+      ) {
+        ColOfRookWhiteLeftOrBlackRightFromCurrentCell = i;
+        break;
+      }else if(getBoard()[currRow][i]!=null && !(getBoard()[currRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColOfRookWhiteLeftOrBlackRightFromCurrentCell != -1) {
+      // 見つかった Rook の右側経路から上下にズレるとき
+      if(targetRow!=currRow){
+        // 見つかったRookのcolから右を探す
+        // Rookが移動可能な最初のマスのcolを求める
+        // 求めたcolとRookのcolとの差を求める
+        int updatedColOfWhiteRightOrBlackLeftForRook = -1;
+        for(int i=ColOfRookWhiteLeftOrBlackRightFromCurrentCell+1; i<COL_RANGE; i++){
+          if(getBoard()[currRow][i]!=null){
+            if(getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell].isWhite != getBoard()[currRow][i].isWhite) {
+              updatedColOfWhiteRightOrBlackLeftForRook = i;
+            }
+            else updatedColOfWhiteRightOrBlackLeftForRook = i-1;
+          }
+        }
+        if(updatedColOfWhiteRightOrBlackLeftForRook==-1) updatedColOfWhiteRightOrBlackLeftForRook = COL_RANGE-1;
+
+        if(getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell].isWhite){
+          if(getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell] instanceof Rook){
+            ((Rook)getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell])
+                .setRight(updatedColOfWhiteRightOrBlackLeftForRook-ColOfRookWhiteLeftOrBlackRightFromCurrentCell);
+          }else{
+            ((Rook)((Pawn) getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell])
+                .getNewPiece())
+                .setRight(updatedColOfWhiteRightOrBlackLeftForRook-ColOfRookWhiteLeftOrBlackRightFromCurrentCell);
+          }
+        }else{
+          if(getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell] instanceof Rook){
+            ((Rook)getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell])
+                .setLeft(updatedColOfWhiteRightOrBlackLeftForRook-ColOfRookWhiteLeftOrBlackRightFromCurrentCell);
+          }else{
+            ((Rook)((Pawn) getBoard()[currRow][ColOfRookWhiteLeftOrBlackRightFromCurrentCell])
+                .getNewPiece())
+                .setLeft(updatedColOfWhiteRightOrBlackLeftForRook-ColOfRookWhiteLeftOrBlackRightFromCurrentCell);
+          }
+        }
+      }
+    }
+
+    // 白のRookから見て左側 or 黒のルークから見て右側経路にある場合
+    int ColOfRookWhiteRightOrBlackLeftFromCurrentCell= -1;
+    for(int i=currCol+1; i<COL_RANGE; i++) {
+      if (getBoard()[currRow][i]!=null
+          && getBoard()[currRow][i] instanceof Rook
+          || (getBoard()[currRow][i] instanceof Pawn && ((Pawn) getBoard()[currRow][i]).getNewPiece() instanceof Rook)
+      ) {
+        ColOfRookWhiteRightOrBlackLeftFromCurrentCell = i;
+        break;
+      }else if(getBoard()[currRow][i]!=null && !(getBoard()[currRow][i] instanceof Rook)){
+        break;
+      }
+    }
+    if(ColOfRookWhiteRightOrBlackLeftFromCurrentCell != -1) {
+      // 見つかった Rook の左側経路から上下にズレるとき
+      if(targetRow!=currRow){
+        // 見つかったRookのcolから左を探す
+        // Rookが移動可能な最初のマスのcolを求める
+        // Rookのcolと求めたcolとの差を求める
+        int updatedColOfWhiteLeftOrBlackRightForRook = -1;
+        for(int i=ColOfRookWhiteRightOrBlackLeftFromCurrentCell-1; i>=0; i--){
+          if(getBoard()[currRow][i]!=null){
+            if(getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell].isWhite != getBoard()[currRow][i].isWhite) {
+              updatedColOfWhiteLeftOrBlackRightForRook = i-1;
+            }
+            else updatedColOfWhiteLeftOrBlackRightForRook = i;
+          }
+        }
+
+        if(updatedColOfWhiteLeftOrBlackRightForRook==-1) updatedColOfWhiteLeftOrBlackRightForRook = 0;
+
+        if(getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell].isWhite){
+          if(getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell] instanceof Rook){
+            ((Rook)getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell])
+                .setLeft(ColOfRookWhiteRightOrBlackLeftFromCurrentCell-updatedColOfWhiteLeftOrBlackRightForRook);
+          }else{
+            ((Rook)((Pawn) getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell])
+                .getNewPiece())
+                .setLeft(ColOfRookWhiteRightOrBlackLeftFromCurrentCell-updatedColOfWhiteLeftOrBlackRightForRook);
+          }
+
+        }else{
+          if(getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell] instanceof Rook){
+            ((Rook)getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell])
+                .setRight(ColOfRookWhiteRightOrBlackLeftFromCurrentCell-updatedColOfWhiteLeftOrBlackRightForRook);
+          }else {
+            ((Rook)((Pawn) getBoard()[currRow][ColOfRookWhiteRightOrBlackLeftFromCurrentCell])
+                .getNewPiece())
+                .setRight(ColOfRookWhiteRightOrBlackLeftFromCurrentCell-updatedColOfWhiteLeftOrBlackRightForRook);
+          }
+        }
+      }
+    }
+  }
+
+  public void promotePawn(int targetRow, int targetCol){
+    if(targetRow==ROW_RANGE-1
+        && getBoard()[targetRow][targetCol] instanceof Pawn
+        && !((Pawn) getBoard()[targetRow][targetCol]).isPromoted()
+    ){
+      int option = -1;
+      Scanner in = new Scanner(System.in);
+      while(option != 2){
         System.out.println("Promotion");
         System.out.println("---------");
-        System.out.println("1: Queen");
+//        System.out.println("1: Queen");
         System.out.println("2: Rook");
-        System.out.println("3: Bishop");
-        System.out.println("4: Knight");
-        Scanner in = new Scanner(System.in);
-        int option = in.nextInt();
-        Piece promotedPiece = null;
-        if(option==1){
-          if(updatedCell.isWhite) promotedPiece = new Queen("♕", 9, true, new Position(targetRow, targetCol));
-          else promotedPiece = new Queen("♛", 9, false, new Position(targetRow, targetCol));
-        }else if(option == 2){
-          // left, right, top down プロパティ要修正
-          // *********************************************
-          // *********************************************
-          // *********************************************
-          // *********************************************
-          if(updatedCell.isWhite) promotedPiece = new Rook("♖", 5, true, new Position(targetRow, targetCol), 0 , 0 , 0, 0);
-          else promotedPiece = new Queen("♜", 5, false, new Position(targetRow, targetCol));
-        }else if(option == 3){
-          if(updatedCell.isWhite) promotedPiece = new Bishop("♗", 3, true, new Position(targetRow, targetCol));
-          else promotedPiece = new Bishop("♝", 3, false, new Position(targetRow, targetCol));
-        }else if(option == 4){
-          if(updatedCell.isWhite) promotedPiece = new Knight("♘", 2, true, new Position(targetRow, targetCol));
-          else promotedPiece = new Queen("♞", 2, false, new Position(targetRow, targetCol));
+//        System.out.println("3: Bishop");
+//        System.out.println("4: Knight");
+        option = in.nextInt();
+        if(option != -2){
+          System.out.println("Invalid number, select 2");
         }
-        ((Pawn) updatedCell).promote(promotedPiece);
-        System.out.println();
       }
 
-      printBoard();
+      Piece promotedPiece = null;
+      if(option==1){
+        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Queen("♕", 9, true, new Position(targetRow, targetCol));
+        else promotedPiece = new Queen("♛", 9, false, new Position(targetRow, targetCol));
+      }else if(option == 2){
+        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Rook("♖", 5, true, new Position(targetRow, targetCol), 0 , 0 , 0, 0);
+        else promotedPiece = new Rook("♜", 5, true, new Position(targetRow, targetCol), 0 , 0 , 0, 0);
+      }else if(option == 3){
+        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Bishop("♗", 3, true, new Position(targetRow, targetCol));
+        else promotedPiece = new Bishop("♝", 3, false, new Position(targetRow, targetCol));
+      }else if(option == 4){
+        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Knight("♘", 2, true, new Position(targetRow, targetCol));
+        else promotedPiece = new Queen("♞", 2, false, new Position(targetRow, targetCol));
+      }
+      ((Pawn) getBoard()[targetRow][targetCol]).promote(promotedPiece);
       System.out.println();
     }
   }
@@ -992,23 +1148,25 @@ public class Game {
 //    board[0][5] = new Bishop("♗", 3, true, new Position(0, 5));
 //    board[0][6] = new Knight("♘", 2, true, new Position(0, 6));
     board[0][7] = new Rook("♖", 5, true, new Position(0, 7), 6, 0, 0, 0);
-    board[1][0] = new Pawn("♙", 1, true, new Position(1, 0), true, false, false, false,false, null);
-    board[1][1] = new Pawn("♙", 1, true, new Position(1, 1), true, false, false, false,false,  null);
-    board[1][2] = new Pawn("♙", 1, true, new Position(1, 2), true, false, false, false,false, null);
-    board[1][3] = new Pawn("♙", 1, true, new Position(1, 3), true, false, false, false,false, null);
-    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, null);
-    board[1][5] = new Pawn("♙", 1, true, new Position(1, 5), true, false, false, false,false, null);
-    board[1][6] = new Pawn("♙", 1, true, new Position(1, 6), true, false, false, false,false, null);
-    board[1][7] = new Pawn("♙", 1, true, new Position(1, 7), true, false, false, false,false, null);
+    board[1][0] = new Pawn("♙", 1, true, new Position(1, 0), true, false, false, false,false, false, null);
+    board[1][1] = new Pawn("♙", 1, true, new Position(1, 1), true, false, false, false,false, false, null);
+    board[1][2] = new Pawn("♙", 1, true, new Position(1, 2), true, false, false, false,false, false, null);
+    board[1][3] = new Pawn("♙", 1, true, new Position(1, 3), true, false, false, false,false, false, null);
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+//    board[1][5] = new Pawn("♙", 1, true, new Position(1, 5), true, false, false, false,false, false, null);
+    board[1][5] = new Pawn("♟", 1, false, new Position(1, 5), false, false, false, false,false, false, null);
+    board[1][6] = new Pawn("♙", 1, true, new Position(1, 6), true, false, false, false,false, false, null);
+    board[1][7] = new Pawn("♙", 1, true, new Position(1, 7), true, false, false, false,false, false, null);
 
-    board[6][0] = new Pawn("♟", 1, false, new Position(6, 0), true, false, false, false,false, null);
-    board[6][1] = new Pawn("♟", 1, false, new Position(6, 1), true, false, false, false,false, null);
-    board[6][2] = new Pawn("♟", 1, false, new Position(6, 2), true, false, false, false,false, null);
-    board[6][3] = new Pawn("♟", 1, false, new Position(6, 3), true, false, false, false,false, null);
-    board[6][4] = new Pawn("♟", 1, false, new Position(6, 4), true, false, false, false,false, null);
-    board[6][5] = new Pawn("♟", 1, false, new Position(6, 5), true, false, false, false,false, null);
-    board[6][6] = new Pawn("♟", 1, false, new Position(6, 6), true, false, false, false,false, null);
-    board[6][7] = new Pawn("♟", 1, false, new Position(6, 7), true, false, false, false,false, null);
+    board[6][0] = new Pawn("♟", 1, false, new Position(6, 0), true, false, false, false,false, false, null);
+    board[6][1] = new Pawn("♟", 1, false, new Position(6, 1), true, false, false, false,false, false, null);
+    board[6][2] = new Pawn("♟", 1, false, new Position(6, 2), true, false, false, false,false, false, null);
+//    board[6][3] = new Pawn("♟", 1, false, new Position(6, 3), true, false, false, false,false, false, null);
+    board[6][3] = new Pawn("♙", 1, true, new Position(6, 3), false, false, false, false,false, false, null);
+    board[6][4] = new Pawn("♟", 1, false, new Position(6, 4), true, false, false, false,false, false, null);
+    board[6][5] = new Pawn("♟", 1, false, new Position(6, 5), true, false, false, false,false, false, null);
+    board[6][6] = new Pawn("♟", 1, false, new Position(6, 6), true, false, false, false,false, false, null);
+    board[6][7] = new Pawn("♟", 1, false, new Position(6, 7), true, false, false, false,false, false, null);
     board[7][0] = new Rook("♜", 5, false, new Position(7, 0), 6 ,0 ,0 , 0);
 //    board[7][1] = new Knight("♞", 2, false, new Position(7, 1));
 //    board[7][2] = new Bishop("♝", 3, false, new Position(7, 2));
