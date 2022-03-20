@@ -8,9 +8,8 @@ public class Bishop extends Piece {
 
   @Override
   public boolean isValidMove(Position newPosition) {
-    return super.isValidMove(newPosition)
-        && Math.abs(this.getPosition().getCol() - newPosition.getCol()) == Math.abs(this.getPosition().getRow() - newPosition.getRow())
-        && Math.abs(this.getPosition().getCol() - newPosition.getCol()) >= 1;
+    return super.isValidMove(newPosition);
+        // TODO
   }
 
   @Override

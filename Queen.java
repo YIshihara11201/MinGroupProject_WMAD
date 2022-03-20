@@ -9,6 +9,7 @@ public class Queen extends Piece {
   @Override
   public boolean isValidMove(Position newPosition) {
     return
+        //TODO
       super.isValidMove(newPosition) &&
         (
           Math.abs(this.getPosition().getCol() - newPosition.getCol()) == Math.abs(this.getPosition().getRow() - newPosition.getRow())

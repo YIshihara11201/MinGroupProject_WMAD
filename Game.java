@@ -191,27 +191,30 @@ public class Game {
           "Invalid Input, piece[" + move.substring(0, 2) + "] can't move to [" + move.substring(2, 4) + "]. Try again");
     }
 
-    // 実際に動かす処理
+    // move piece here
     if (currentCell.isValidMove(new Position(targetRow, targetCol))) {
       System.out.println("OK");
       System.out.println();
 
-      // 動かす前のアンパサント周りの設定をする
+      // en passant setting
       checkFirstMoveAndEnPassant(currRow, currCol, targetRow);
 
-      // コマのpositionプロパティを移動先のセルに設定する
+      // set position property
       getBoard()[currRow][currCol].setPosition(new Position(targetRow, targetCol));
 
-      // 目的のセルにコマを動かす
+      // move to target cell
       getBoard()[targetRow][targetCol] = getBoard()[currRow][currCol];
       getBoard()[currRow][currCol] = null;
 
-      // Pawn のプロモーションを行う
       promotePawn(targetRow, targetCol);
 
+      //****** TODO ********
+      // Add setting for moving pieces
       setSurroundingStateOfMovingPawn(targetRow, targetCol);
       setSurroundingStateOfMovingRook(targetRow, targetCol);
 
+      //****** TODO ********
+      // Add setting for surrounding state for pieces affected by moving piece
       setSurroundingStateOfOtherPawn(currRow, currCol, targetRow, targetCol);
       setSurroundingStateOfOtherRook(currRow, currCol, targetRow, targetCol);
 
@@ -219,6 +222,8 @@ public class Game {
       System.out.println();
     }
   }
+
+  // helper functions
 
   public void checkFirstMoveAndEnPassant(int currRow, int currCol,int targetRow){
     //　２ターン前に動かしたポーンのepフラグがtrueの場合フラグをおろす
@@ -635,9 +640,10 @@ public class Game {
   }
 
   public void setSurroundingStateOfOtherRook(int currRow, int currCol, int targetRow, int targetCol){
-    // pattern2 コマを動かした先のセルが Rook の移動範囲に含まれている場合その Rook の移動可能範囲を設定する
 
-    // コマを動かした先のセルが、黒の Rook の左側経路に含まれる場合
+    // set movable area for Rook when its available area is affected by other piece's move
+
+    // when target cell hits black Rook's left-hand movable area
     int ColOfBlackRookLeftFromTargetPiece= -1;
     for(int i=targetCol-1; i>=0; i--) {
       if (getBoard()[targetRow][i]!=null
@@ -667,7 +673,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、黒の Rook の右側経路に含まれる場合
+    // // when target cell hits black Rook's right-hand movable area
     int ColBlackRookRightFromTargetPiece= -1;
     for(int i=targetCol+1; i<COL_RANGE; i++){
       if(getBoard()[targetRow][i]!=null
@@ -697,7 +703,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、黒の Rook の上側経路に含まれる場合
+    // // when target cell hits black Rook's upper movable area
     int RowOfBlackRookUpFromTargetPiece= -1;
     for(int i=targetRow+1; i<ROW_RANGE; i++){
       if(getBoard()[i][targetCol]!=null
@@ -733,7 +739,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、黒の Rook の下側経路に含まれる場合
+    // // when target cell hits black Rook's lower movable area
     int RowOfBlackRookDownFromTargetPiece= -1;
     for(int i=targetRow-1; i>=0; i--){
       if(getBoard()[i][targetCol]!=null
@@ -762,7 +768,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、白の Rook の右側経路に含まれる場合
+    // when target cell hits white Rook's right-hand movable area
     int ColOfWhiteRookLeftFromTargetPiece= -1;
     for(int i=targetCol-1; i>=0; i--){
       if(getBoard()[targetRow][i]!=null
@@ -791,7 +797,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、白の Rook の左側経路に含まれる場合
+    // when target cell hits white Rook's left-hand movable area
     int ColOfWhiteRookRightFromTargetPiece= -1;
     for(int i=targetCol+1; i<COL_RANGE; i++){
       if(getBoard()[targetRow][i]!=null
@@ -820,7 +826,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、白の Rook の上側経路に含まれる場合
+    // when target cell hits white Rook's upper movable area
     int RowOfWhiteRookDownFromTargetPiece= -1;
     for(int i=targetRow-1; i>=0; i--){
       if(getBoard()[i][targetCol]!=null
@@ -849,7 +855,7 @@ public class Game {
       }
     }
 
-    // コマを動かした先のセルが、白の Rook の下側経路に含まれる場合
+    // when target cell hits white Rook's lower movable area
     int RowOfWhiteRookUpFromTargetPiece= -1;
     for(int i=targetRow+1; i<ROW_RANGE; i++){
       if(getBoard()[i][targetCol]!=null
@@ -879,10 +885,9 @@ public class Game {
     }
 
 
-    // pattern3 移動前のコマが、Rookの前後左右移動範囲に位置している場合
-    // 移動後にRookの移動範囲から外れる場合には移動可能範囲を再設定する
+    // set movable area for a Rook when other piece leaves from available area of the Rook
 
-    // 白のRookから見て上側 or 黒のルークから見て下側の経路にある場合
+    // when moving piece leaves from upper area of white Rook or lower area of black Rook
     int RowOfRookWhiteDownOrBlackUpFromCurrentCell= -1;
     for(int i=currRow-1; i>=0; i--) {
       if (getBoard()[i][currCol]!=null
@@ -896,11 +901,7 @@ public class Game {
       }
     }
     if(RowOfRookWhiteDownOrBlackUpFromCurrentCell != -1) {
-      // 見つかった Rook の上側経路から左右にズレるとき
       if(targetCol!=currCol){
-        // 見つかった Rook の rowから上を探す
-        // Rookが移動可能な最初のマスのrowを求める
-        // 求めたrowとRookのrowとの差を求める
         int updatedRowOfWhiteUpOrBlackDownForRook = -1;
         for(int i=RowOfRookWhiteDownOrBlackUpFromCurrentCell+1; i<ROW_RANGE; i++){
           if(getBoard()[i][currCol]!=null){
@@ -937,7 +938,7 @@ public class Game {
       }
     }
 
-    // 白のRookから見て下側 or 黒のRookから見て上側経路にある場合
+    // when moving piece leaves from lower area of white Rook or upper area of black Rook
     int RowOfRookWhiteUpOrBlackDownFromCurrentCell= -1;
     for(int i=currRow+1; i<ROW_RANGE; i++) {
       if (getBoard()[i][currCol]!=null
@@ -951,11 +952,8 @@ public class Game {
       }
     }
     if(RowOfRookWhiteUpOrBlackDownFromCurrentCell != -1) {
-      // 見つかった Rook の下側経路から左右にズレるとき
+
       if(targetCol!=currCol){
-        // 見つかったRookのrowから下を探す
-        // Rookが移動可能な最初のマスのrowを求める
-        // Rookと求めたrowとの差を求める
         int updatedRowOfWhiteDownOrBlackUpForRook = -1;
         for(int i=RowOfRookWhiteUpOrBlackDownFromCurrentCell-1; i>=0; i--){
           if(getBoard()[i][currCol]!=null){
@@ -991,7 +989,7 @@ public class Game {
       }
     }
 
-    // 白のRookから見て右側 or 黒のルークから見て左側経路にある場合
+    // when moving piece leaves from right-hand area of white Rook or left-hand area of black Rook
     int ColOfRookWhiteLeftOrBlackRightFromCurrentCell= -1;
     for(int i=currCol-1; i>=0; i--) {
       if (getBoard()[currRow][i]!=null
@@ -1005,11 +1003,8 @@ public class Game {
       }
     }
     if(ColOfRookWhiteLeftOrBlackRightFromCurrentCell != -1) {
-      // 見つかった Rook の右側経路から上下にズレるとき
+
       if(targetRow!=currRow){
-        // 見つかったRookのcolから右を探す
-        // Rookが移動可能な最初のマスのcolを求める
-        // 求めたcolとRookのcolとの差を求める
         int updatedColOfWhiteRightOrBlackLeftForRook = -1;
         for(int i=ColOfRookWhiteLeftOrBlackRightFromCurrentCell+1; i<COL_RANGE; i++){
           if(getBoard()[currRow][i]!=null){
@@ -1043,7 +1038,7 @@ public class Game {
       }
     }
 
-    // 白のRookから見て左側 or 黒のルークから見て右側経路にある場合
+    // when moving piece leaves from left area of white Rook or right area of black Rook
     int ColOfRookWhiteRightOrBlackLeftFromCurrentCell= -1;
     for(int i=currCol+1; i<COL_RANGE; i++) {
       if (getBoard()[currRow][i]!=null
@@ -1057,11 +1052,7 @@ public class Game {
       }
     }
     if(ColOfRookWhiteRightOrBlackLeftFromCurrentCell != -1) {
-      // 見つかった Rook の左側経路から上下にズレるとき
       if(targetRow!=currRow){
-        // 見つかったRookのcolから左を探す
-        // Rookが移動可能な最初のマスのcolを求める
-        // Rookのcolと求めたcolとの差を求める
         int updatedColOfWhiteLeftOrBlackRightForRook = -1;
         for(int i=ColOfRookWhiteRightOrBlackLeftFromCurrentCell-1; i>=0; i--){
           if(getBoard()[currRow][i]!=null){
@@ -1137,7 +1128,6 @@ public class Game {
     }
   }
 
-  // helper functions
   public void initialize () {
     board = new Piece[ROW_RANGE][COL_RANGE];
     board[0][0] = new Rook("♖", 5, true, new Position(0, 0), 0, 6, 0, 0);

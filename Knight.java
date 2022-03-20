@@ -10,6 +10,7 @@ public class Knight extends Piece {
   public boolean isValidMove(Position newPosition) {
     return
       super.isValidMove(newPosition) &&
+          //TODO
           (
               Math.abs(this.getPosition().getCol() - newPosition.getCol()) == 2 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) == 1
               || Math.abs(this.getPosition().getCol() - newPosition.getCol()) == 1 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) == 2
