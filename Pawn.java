@@ -100,13 +100,13 @@ public class Pawn extends Piece {
       return super.isValidMove(newPosition)
           && (
            (isFirstMove() && isWhite && rowDiff==2 && colDiff==0)
-          || (isFirstMove() && !isWhite && Math.abs(rowDiff)==2 && colDiff==0)
+          || (isFirstMove() && !isWhite && rowDiff==-2 && colDiff==0)
           || (!isFront() && isWhite && rowDiff==1 && colDiff==0)
-          || (!isFront() && !isWhite && Math.abs(rowDiff)==1 && colDiff==0)
-          || (isLeftFront() && isWhite && rowDiff==1 && Math.abs(colDiff)==1)
-          || (isLeftFront() && !isWhite && Math.abs(rowDiff)==1 && colDiff==1)
+          || (!isFront() && !isWhite && rowDiff==-1 && colDiff==0)
+          || (isLeftFront() && isWhite && rowDiff==1 && colDiff==-1)
+          || (isLeftFront() && !isWhite && rowDiff==1 && colDiff==1)
           || (isRightFront() && isWhite && rowDiff==1 && colDiff==1)
-          || (isRightFront() && !isWhite && Math.abs(rowDiff)==1 && Math.abs(colDiff)==1)
+          || (isRightFront() && !isWhite && rowDiff==-1 && colDiff==-1)
         );
     }
   }

@@ -20,21 +20,9 @@ public class Game {
   // Constructor creates an empty board
   public Game() {
 //    initialize();
-//    check1();
-//    check2();
-//    check3();
-//    check4();
-//    check5();
-//    check6();
-//    check7();
-//    check8();
-//    check9();
-//    check10();
-//    check11();
-    check12();
-//    check13();
-
-
+//    checkForPromotion();
+    checkForWhitePieceEnPassant();
+//    checkForBlackPieceEnPassant();
   }
 
   public int getTurn() {
@@ -117,6 +105,8 @@ public class Game {
             + " won by resignation");
     System.out.println();
     initialize();
+    setTurn(1);
+    System.out.println("Game " + (getResultRecord()[0]+getResultRecord()[1]+1));
   }
 
   // 4.display available cells
@@ -222,7 +212,6 @@ public class Game {
       if(targetRow==0 || targetRow==ROW_RANGE-1){
         promotePawn(targetRow, targetCol);
       }
-
 
       //****** TODO ********
       // renew setting for moving piece
@@ -340,7 +329,7 @@ public class Game {
                 && getBoard()[targetRow][targetCol+1] instanceof Pawn
                 && getBoard()[targetRow][targetCol+1].isWhite
         ){
-          ((Pawn) getBoard()[targetRow][targetCol-1]).setLeftFront(true);
+          ((Pawn) getBoard()[targetRow][targetCol+1]).setLeftFront(true);
         }
       }
     }
@@ -1138,8 +1127,12 @@ public class Game {
         System.out.println("2: Rook");
 //        System.out.println("3: Bishop");
 //        System.out.println("4: Knight");
-        option = in.nextInt();
-        if(option != -2){
+        try{
+          option = in.nextInt();
+        }catch(NumberFormatException e){
+          System.out.println("Invalid input.");
+        }
+        if(option != 2){
           System.out.println("Invalid number, select 2");
         }
       }
@@ -1152,8 +1145,8 @@ public class Game {
         if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Rook("♖", 5, true, new Position(targetRow, targetCol), 0 , 0 , 0, 0);
         else promotedPiece = new Rook("♜", 5, true, new Position(targetRow, targetCol), 0 , 0 , 0, 0);
       }else if(option == 3){
-        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Bishop("♗", 3, true, new Position(targetRow, targetCol));
-        else promotedPiece = new Bishop("♝", 3, false, new Position(targetRow, targetCol));
+        if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Bishop("♗", 3, true, new Position(targetRow, targetCol), 0, 0, 0, 0);
+        else promotedPiece = new Bishop("♝", 3, false, new Position(targetRow, targetCol), 0, 0, 0, 0);
       }else if(option == 4){
         if(getBoard()[targetRow][targetCol].isWhite) promotedPiece = new Knight("♘", 2, true, new Position(targetRow, targetCol));
         else promotedPiece = new Queen("♞", 2, false, new Position(targetRow, targetCol));
@@ -1167,10 +1160,10 @@ public class Game {
     board = new Piece[ROW_RANGE][COL_RANGE];
     board[0][0] = new Rook("♖", 5, true, new Position(0, 0), 0, 6, 0, 0);
 //    board[0][1] = new Knight("♘", 2, true, new Position(0, 1));
-//    board[0][2] = new Bishop("♗", 3, true, new Position(0, 2));
+//    board[0][2] = new Bishop("♗", 3, true, new Position(0, 2), 0, 0, 0, 0);
 //    board[0][3] = new Queen("♕", 9, true, new Position(0, 3));
 //    board[0][4] = new King("♔", 1000, true, new Position(0, 4));
-//    board[0][5] = new Bishop("♗", 3, true, new Position(0, 5));
+//    board[0][5] = new Bishop("♗", 3, true, new Position(0, 5), 0, 0, 0, 0);
 //    board[0][6] = new Knight("♘", 2, true, new Position(0, 6));
     board[0][7] = new Rook("♖", 5, true, new Position(0, 7), 6, 0, 0, 0);
     board[1][0] = new Pawn("♙", 1, true, new Position(1, 0), true, false, false, false,false, false, null);
@@ -1192,17 +1185,46 @@ public class Game {
     board[6][7] = new Pawn("♟", 1, false, new Position(6, 7), true, false, false, false,false, false, null);
     board[7][0] = new Rook("♜", 5, false, new Position(7, 0), 6 ,0 ,0 , 0);
 //    board[7][1] = new Knight("♞", 2, false, new Position(7, 1));
-//    board[7][2] = new Bishop("♝", 3, false, new Position(7, 2));
+//    board[7][2] = new Bishop("♝", 3, false, new Position(7, 2), 0, 0, 0, 0);
 //    board[7][3] = new Queen("♛", 9, false, new Position(7, 3));
 //    board[7][4] = new King("♚", 1000, false, new Position(7, 4));
-//    board[7][5] = new Bishop("♝", 3, false, new Position(7, 5));
+//    board[7][5] = new Bishop("♝", 3, false, new Position(7, 5), 0, 0, 0, 0);
 //    board[7][6] = new Knight("♞", 2, false, new Position(7, 6));
     board[7][7] = new Rook("♜", 5, false, new Position(7, 7), 0, 6, 0, 0);
 
     setBoard(board);
   }
 
-  // check functions (test)
+
+  // operation check functions (test)
+  public void checkForPromotion(){
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♟", 1, false, new Position(1, 4), false, false, false, false,false, false, null);
+    board[3][1] = new Rook("♜", 5, false, new Position(3, 1), 6, 1, 3, 4);
+    board[6][4] = new Pawn("♙", 1, true, new Position(6, 4), false, false, false, false,false, false, null);
+    board[7][2] = new Rook("♖", 5, true, new Position(7, 2), 2, 5, 0, 7);
+    board[7][7] = new Rook("♜", 5, false, new Position(7, 7), 0, 5, 7, 0);
+    setBoard(board);
+  }
+  public void checkForWhitePieceEnPassant(){
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[1][4] = new Pawn("♙", 1, true, new Position(1, 4), true, false, false, false,false, false, null);
+    board[3][5] = new Pawn("♟", 1, false, new Position(3, 5), false, false, false, false,false, false, null);
+    board[3][3] = new Pawn("♟", 1, false, new Position(3, 3), false, false, false, false,false, false, null);
+    board[2][7] = new Rook("♜", 5, false, new Position(2, 7), 0, 7, 2, 5);
+    setBoard(board);
+  }
+  public void checkForBlackPieceEnPassant(){
+    board = new Piece[ROW_RANGE][COL_RANGE];
+    board[6][3] = new Pawn("♟", 1, false, new Position(6, 3), true, false, false, false,false, false, null);
+    board[4][2] = new Pawn("♙", 1, true, new Position(4, 2), false, false, false, false,false, false, null);
+    board[4][4] = new Pawn("♙", 1, true, new Position(4, 4), false, false, false, false,false, false, null);
+    board[2][0] = new Rook("♖", 5, true, new Position(2, 0), 0, 7, 5, 2);
+    setBoard(board);
+  }
+
+
+
   //白ルーク上からコマが外れる場合の確認
   public void check1 () {
     board = new Piece[ROW_RANGE][COL_RANGE];
