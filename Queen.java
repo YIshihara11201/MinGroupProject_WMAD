@@ -2,24 +2,26 @@ package GroupMiniProject;
 
 public class Queen extends Piece {
 
+
   public Queen(String symbol, int value, boolean isWhite, Position position){
     super(symbol, value, isWhite, position);
   }
 
   @Override
   public boolean isValidMove(Position newPosition) {
-    return
-        //TODO
-      super.isValidMove(newPosition) &&
-        (
-          Math.abs(this.getPosition().getCol() - newPosition.getCol()) == Math.abs(this.getPosition().getRow() - newPosition.getRow())
-          && Math.abs(this.getPosition().getCol() - newPosition.getCol()) >= 1
-        ) ||
-      super.isValidMove(newPosition) &&
-        (
-          Math.abs(this.getPosition().getCol() - newPosition.getCol()) >= 1 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) == 0
-          || Math.abs(this.getPosition().getCol() - newPosition.getCol()) == 0 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) >= 1
-        );
+
+
+    int rowDiff = newPosition.getRow()-this.getPosition().getRow();
+    int colDiff = newPosition.getCol()-this.getPosition().getCol();
+
+      return super.isValidMove(newPosition) &&
+
+                  (isWhite && rowDiff > 0 && colDiff == 0)
+              ||  (!isWhite && rowDiff > 0 && colDiff == 0)
+              ||  (isWhite && colDiff > 0 && rowDiff == 0)
+              ||  (!isWhite && colDiff > 0 && rowDiff == 0)
+              ||  (isWhite && colDiff == rowDiff && colDiff > 0 || !isWhite && colDiff == rowDiff && colDiff > 0);
+
   }
 
   @Override

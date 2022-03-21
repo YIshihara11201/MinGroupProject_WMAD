@@ -2,14 +2,25 @@ package GroupMiniProject;
 
 public class Bishop extends Piece {
 
+
+
+
   public Bishop(String symbol, int value, boolean isWhite, Position position) {
     super(symbol, value, isWhite, position);
   }
 
   @Override
   public boolean isValidMove(Position newPosition) {
-    return super.isValidMove(newPosition);
-        // TODO
+
+    int rowDiff = newPosition.getRow()-this.getPosition().getRow();
+    int colDiff = newPosition.getCol()-this.getPosition().getCol();
+
+
+    return super.isValidMove(newPosition) && (
+            isWhite && colDiff == rowDiff && colDiff > 0 || !isWhite && colDiff == rowDiff && colDiff > 0
+    );
+
+
   }
 
   @Override

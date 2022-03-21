@@ -8,13 +8,13 @@ public class Knight extends Piece {
 
   @Override
   public boolean isValidMove(Position newPosition) {
+    int rowDiff = newPosition.getRow()-this.getPosition().getRow();
+    int colDiff = newPosition.getCol()-this.getPosition().getCol();
     return
       super.isValidMove(newPosition) &&
-          //TODO
-          (
-              Math.abs(this.getPosition().getCol() - newPosition.getCol()) == 2 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) == 1
-              || Math.abs(this.getPosition().getCol() - newPosition.getCol()) == 1 && Math.abs(this.getPosition().getRow() - newPosition.getRow()) == 2
-          );
+               (rowDiff == 2 && colDiff == 1)
+            || (colDiff == 2 && rowDiff == 1)
+         ;
   }
 
   @Override
